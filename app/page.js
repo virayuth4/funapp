@@ -3,6 +3,8 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { CAFES } from "@/app/data/cafes";
 import { SPONSORS } from "@/app/data/sponsors";
+import { REVIEWS } from "@/app/data/reviews";
+import Link from "next/link";
 
 // Clean color accents for card styling
 const CARD_ACCENTS = [
@@ -26,6 +28,8 @@ export default function Home() {
   const [activeModalItem, setActiveModalItem] = useState(null);
   const [isSpinning, setIsSpinning] = useState(false);
   const [suggestedSponsor, setSuggestedSponsor] = useState(null);
+  const [showReviews, setShowReviews] = useState(false);
+  const [showPartnerInfo, setShowPartnerInfo] = useState(false);
 
   const [reelItems, setReelItems] = useState([]);
   const [translateX, setTranslateX] = useState(0);
@@ -34,6 +38,10 @@ export default function Home() {
   const lastTickIndexRef = useRef(-1);
   const animationFrameRef = useRef(null);
   const branches = ["ALL", "BKK", "TTP", "TK"];
+  
+  useEffect(() => {
+  setShowReviews(false);
+}, [activeModalItem]);
 
   // Filter available cafes
   const availableCafes = useMemo(() => {
@@ -370,116 +378,189 @@ const playRevealSound = () => {
         </div>
       </div>
 
-      {/* Selected Cafe Modal */}
-      {activeModalItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="relative w-full max-w-sm bg-neutral-950 border border-neutral-800 rounded-xl p-6 shadow-2xl animate-in zoom-in-95 duration-150">
-            {/* Accent Top Strip */}
-            <div
-              className="h-1.5 w-full rounded-t -mt-6 -mx-6 mb-6"
-              style={{ backgroundColor: activeModalItem.reelAccent.color }}
-            />
+    {/* Selected Cafe Modal */}
+{activeModalItem && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="relative w-full max-w-sm max-h-[90vh] overflow-y-auto bg-neutral-950 border border-neutral-800 rounded-xl p-6 shadow-2xl animate-in zoom-in-95 duration-150">
+      
+      {/* Accent Top Strip */}
+      <div
+        className="h-1.5 w-full rounded-t -mt-6 -mx-6 mb-6"
+        style={{ backgroundColor: activeModalItem.reelAccent.color }}
+      />
 
+      <button
+        onClick={() => setActiveModalItem(null)}
+        className="absolute top-4 right-4 text-neutral-400 hover:text-white text-sm cursor-pointer"
+        aria-label="Close"
+      >
+        ✕
+      </button>
+
+      {/* Cafe Identity */}
+      <div className="flex items-center gap-4">
+        <img
+          src={activeModalItem.logo_url}
+          alt={activeModalItem.name}
+          className="w-16 h-16 rounded-xl object-cover border border-neutral-700 shadow-md shrink-0"
+        />
+        <div className="min-w-0 flex-1">
+          <span
+            className="text-[10px] font-mono uppercase font-bold tracking-widest"
+            style={{ color: activeModalItem.reelAccent.color }}
+          >
+            Selected Cafe
+          </span>
+          <h2 className="text-lg font-extrabold text-white truncate">
+            {activeModalItem.name}
+          </h2>
+          <span className="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-mono bg-neutral-900 border border-neutral-800 text-neutral-300">
+            {activeModalItem.branch_location}
+          </span>
+        </div>
+      </div>
+
+      <p className="mt-4 text-xs text-neutral-400 leading-relaxed">
+        {activeModalItem.description}
+      </p>
+
+      {/* Reviews Section */}
+      {(() => {
+        const cafeReviews = REVIEWS.filter(
+          (r) => Number(r.cafeId) === Number(activeModalItem.id)
+        );
+        const avgRating = cafeReviews.length
+          ? (cafeReviews.reduce((acc, r) => acc + r.rating, 0) / cafeReviews.length).toFixed(1)
+          : null;
+
+        return (
+          <div className="mt-4 pt-3 border-t border-neutral-900">
             <button
-              onClick={() => setActiveModalItem(null)}
-              className="absolute top-4 right-4 text-neutral-400 hover:text-white text-sm cursor-pointer"
-              aria-label="Close"
+              onClick={() => setShowReviews((prev) => !prev)}
+              className="w-full flex items-center justify-between py-1.5 text-xs text-neutral-300 hover:text-white transition-colors cursor-pointer"
             >
-              ✕
+              <div className="flex items-center gap-2 font-semibold">
+                <span>Reviews ({cafeReviews.length})</span>
+                {avgRating && (
+                  <span className="text-amber-400 font-mono text-[11px]">
+                    ★ {avgRating}
+                  </span>
+                )}
+              </div>
+              <span className="text-[10px] text-neutral-500 font-mono">
+                {showReviews ? "Hide ▲" : "Read ▼"}
+              </span>
             </button>
 
-            <div className="flex items-center gap-4">
-              <img
-                src={activeModalItem.logo_url}
-                alt={activeModalItem.name}
-                className="w-16 h-16 rounded-xl object-cover border border-neutral-700 shadow-md shrink-0"
-              />
-              <div className="min-w-0 flex-1">
-                <span
-                  className="text-[10px] font-mono uppercase font-bold tracking-widest"
-                  style={{ color: activeModalItem.reelAccent.color }}
-                >
-                  Selected Cafe
-                </span>
-                <h2 className="text-lg font-extrabold text-white truncate">
-                  {activeModalItem.name}
-                </h2>
-                <span className="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-mono bg-neutral-900 border border-neutral-800 text-neutral-300">
-                  {activeModalItem.branch_location}
-                </span>
-              </div>
-            </div>
-
-            <p className="mt-4 text-xs text-neutral-400 leading-relaxed">
-              {activeModalItem.description}
-            </p>
-
-            <div className="mt-5 flex flex-col gap-2">
-              <a
-                href={activeModalItem.map}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-neutral-200 text-xs font-semibold transition-colors"
-              >
-                <span>View on Google Maps ↗</span>
-              </a>
-
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleRemoveCafe(activeModalItem.id)}
-                  className="flex-1 py-2 rounded bg-red-950/40 border border-red-900 hover:bg-red-900/60 text-red-300 text-xs font-semibold transition-colors cursor-pointer"
-                >
-                  Exclude Cafe
-                </button>
-                <button
-                  onClick={() => {
-                    setActiveModalItem(null);
-                    startSpin();
-                  }}
-                  className="flex-1 py-2 rounded bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold transition-colors cursor-pointer"
-                >
-                  Spin Again
-                </button>
-              </div>
-            </div>
-
-            {/* Sponsored Suggestion */}
-            {suggestedSponsor && (
-              <div className="mt-5 pt-4 border-t border-neutral-900">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] font-mono tracking-wider uppercase text-neutral-400">
-                    Nearby In {suggestedSponsor.branch_location}
-                  </span>
-                  <span className="text-[9px] font-mono tracking-widest uppercase text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded">
-                    Sponsored
-                  </span>
-                </div>
-
-                <a
-                  href={suggestedSponsor.map}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-between p-2 rounded-lg border border-neutral-900 bg-neutral-900/50 hover:bg-neutral-900 transition-all group"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <img
-                      src={suggestedSponsor.logo_url}
-                      alt={suggestedSponsor.name}
-                      className="w-8 h-8 rounded object-cover border border-neutral-800"
-                    />
-                    <div className="min-w-0">
-                      <h4 className="text-xs font-medium text-neutral-200 truncate group-hover:text-white">
-                        {suggestedSponsor.name}
-                      </h4>
+            {showReviews && (
+              <div className="mt-2.5 flex flex-col gap-2 max-h-48 overflow-y-auto pr-1">
+                {cafeReviews.length > 0 ? (
+                  cafeReviews.map((rev) => (
+                    <div
+                      key={rev.id}
+                      className="p-2.5 rounded-lg bg-neutral-900/60 border border-neutral-800/80 text-[11px]"
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-semibold text-neutral-200">{rev.author}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-amber-400 text-[10px]">
+                            {"★".repeat(rev.rating)}
+                          </span>
+                          <span className="text-neutral-500 text-[9px] font-mono">{rev.date}</span>
+                        </div>
+                      </div>
+                      <p className="text-neutral-400 leading-snug">{rev.comment}</p>
                     </div>
-                  </div>
-                  <span className="text-neutral-500 group-hover:text-white text-xs pl-2">↗</span>
-                </a>
+                  ))
+                ) : (
+                  <p className="text-[11px] text-neutral-500 py-1 italic">
+                    No reviews yet for this cafe.
+                  </p>
+                )}
               </div>
             )}
           </div>
+        );
+      })()}
+
+      {/* Action Buttons */}
+      <div className="mt-5 flex flex-col gap-2">
+        <a
+          href={activeModalItem.map}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-neutral-200 text-xs font-semibold transition-colors"
+        >
+          <span>View on Google Maps ↗</span>
+        </a>
+
+        <div className="flex gap-2">
+          <button
+            onClick={() => handleRemoveCafe(activeModalItem.id)}
+            className="flex-1 py-2 rounded bg-red-950/40 border border-red-900 hover:bg-red-900/60 text-red-300 text-xs font-semibold transition-colors cursor-pointer"
+          >
+            Exclude Cafe
+          </button>
+          <button
+            onClick={() => {
+              setActiveModalItem(null);
+              startSpin();
+            }}
+            className="flex-1 py-2 rounded bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold transition-colors cursor-pointer"
+          >
+            Spin Again
+          </button>
         </div>
-      )}
+      </div>
+
+    {/* Sponsored Suggestion */}
+{suggestedSponsor && (
+  <div className="mt-5 pt-4 border-t border-neutral-900">
+    <div className="flex items-center justify-between mb-2">
+      <span className="text-[10px] font-mono tracking-wider uppercase text-neutral-400">
+        Nearby In {suggestedSponsor.branch_location}
+      </span>
+      <span className="text-[9px] font-mono tracking-widest uppercase text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded">
+        Partner
+      </span>
+    </div>
+
+    <a
+      href={suggestedSponsor.map}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center justify-between p-2 rounded-lg border border-neutral-900 bg-neutral-900/50 hover:bg-neutral-900 transition-all group"
+    >
+      <div className="flex items-center gap-3 min-w-0">
+        <img
+          src={suggestedSponsor.logo_url}
+          alt={suggestedSponsor.name}
+          className="w-8 h-8 rounded object-cover border border-neutral-800"
+        />
+        <div className="min-w-0">
+          <h4 className="text-xs font-medium text-neutral-200 truncate group-hover:text-white">
+            {suggestedSponsor.name}
+          </h4>
+        </div>
+      </div>
+      <span className="text-neutral-500 group-hover:text-white text-xs pl-2">↗</span>
+    </a>
+
+    {/* Subtle Footnote Link */}
+   <div className="mt-2 text-right">
+  <Link
+    href="/partner"
+    className="text-[9px] font-mono text-neutral-600 hover:text-neutral-400 transition-colors inline-flex items-center gap-1"
+  >
+    <span>Bcome a partner & feature your cafe</span>
+    <span>→</span>
+  </Link>
+</div>
+  </div>
+)}
+    </div>
+  </div>
+)}
     </main>
   );
 }
