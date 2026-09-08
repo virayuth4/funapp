@@ -4,18 +4,17 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { CAFES } from "@/app/data/cafes";
 import { SPONSORS } from "@/app/data/sponsors";
 
-// Colorful wheel palette
 const WHEEL_PALETTE = [
-  "#8529CD", // Rakuten Purple
-  "#06B6D4", // Electric Cyan
-  "#F59E0B", // Vivid Amber
-  "#EC4899", // Neon Pink
-  "#10B981", // Emerald Green
-  "#3B82F6", // Deep Sky Blue
-  "#F97316", // Bright Orange
-  "#6366F1", // Indigo
-  "#14B8A6", // Teal
-  "#E11D48", // Crimson Rose
+  "#8529CD",
+  "#06B6D4",
+  "#F59E0B",
+  "#EC4899",
+  "#10B981",
+  "#3B82F6",
+  "#F97316",
+  "#6366F1",
+  "#14B8A6",
+  "#E11D48",
 ];
 
 export default function Home() {
@@ -25,8 +24,11 @@ export default function Home() {
   const [removedIds, setRemovedIds] = useState([]);
   const [maxChoices, setMaxChoices] = useState("ALL");
   const [activePool, setActivePool] = useState([]);
-  const [activeModalItem, setActiveModalItem] = useState(null); // Used for both cafe winner & clicked sponsor
+  const [activeModalItem, setActiveModalItem] = useState(null);
   const [isSpinning, setIsSpinning] = useState(false);
+
+  // Store the contextual sponsor picked specifically for this spin result
+  const [suggestedSponsor, setSuggestedSponsor] = useState(null);
 
   const branches = ["ALL", "BKK", "TTP", "TK"];
 
@@ -69,7 +71,7 @@ export default function Home() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (numSegments === 0) {
-      ctx.fillStyle = "#1e0b30";
+      ctx.fillStyle = "#121212";
       ctx.beginPath();
       ctx.arc(canvas.width / 2, canvas.height / 2, canvas.width / 2 - 12, 0, 2 * Math.PI);
       ctx.fill();
@@ -84,7 +86,6 @@ export default function Home() {
     activePool.forEach((cafe, i) => {
       const segmentAngle = angle + i * arcSize;
 
-      // Slice
       ctx.beginPath();
       ctx.fillStyle = WHEEL_PALETTE[i % WHEEL_PALETTE.length];
       ctx.moveTo(centerX, centerY);
@@ -92,19 +93,17 @@ export default function Home() {
       ctx.lineTo(centerX, centerY);
       ctx.fill();
 
-      // Divider line
-      ctx.strokeStyle = "#0d0414";
-      ctx.lineWidth = 3;
+      ctx.strokeStyle = "#000000";
+      ctx.lineWidth = 2.5;
       ctx.stroke();
 
-      // Label text
       ctx.save();
       ctx.translate(centerX, centerY);
       ctx.rotate(segmentAngle + arcSize / 2);
       ctx.textAlign = "right";
       ctx.fillStyle = "#ffffff";
       ctx.font = "bold 13px system-ui, -apple-system, sans-serif";
-      ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
+      ctx.shadowColor = "rgba(0, 0, 0, 0.75)";
       ctx.shadowBlur = 4;
 
       const displayName =
@@ -113,23 +112,20 @@ export default function Home() {
       ctx.restore();
     });
 
-    // Outer edge border
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // Center Hub
     ctx.beginPath();
-    ctx.arc(centerX, centerY, 32, 0, 2 * Math.PI);
-    ctx.fillStyle = "#0d0414";
+    ctx.arc(centerX, centerY, 30, 0, 2 * Math.PI);
+    ctx.fillStyle = "#000000";
     ctx.fill();
-    ctx.strokeStyle = "#8529CD";
-    ctx.lineWidth = 4;
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 2.5;
     ctx.stroke();
 
-    // Center Icon
     ctx.fillStyle = "#ffffff";
     ctx.font = "16px sans-serif";
     ctx.textAlign = "center";
@@ -147,6 +143,7 @@ export default function Home() {
 
     setIsSpinning(true);
     setActiveModalItem(null);
+    setSuggestedSponsor(null);
 
     const fullRotations = (6 + Math.random() * 4) * (2 * Math.PI);
     const extraStop = Math.random() * (2 * Math.PI);
@@ -179,8 +176,18 @@ export default function Home() {
         const relativeAngle =
           (pointerAngle - normalizedAngle + 2 * Math.PI) % (2 * Math.PI);
         const winningIndex = Math.floor(relativeAngle / arcSize) % numSegments;
+        const winner = activePool[winningIndex];
 
-        setActiveModalItem(activePool[winningIndex]);
+        // Pick a relevant partner matching the winning location
+        if (SPONSORS && SPONSORS.length > 0) {
+          const matched = SPONSORS.filter(
+            (s) => s.branch_location === winner.branch_location
+          );
+          const pool = matched.length > 0 ? matched : SPONSORS;
+          setSuggestedSponsor(pool[Math.floor(Math.random() * pool.length)]);
+        }
+
+        setActiveModalItem(winner);
         setIsSpinning(false);
       }
     };
@@ -191,6 +198,7 @@ export default function Home() {
   const handleRemoveCafe = (cafeId) => {
     setRemovedIds((prev) => [...prev, cafeId]);
     setActiveModalItem(null);
+    setSuggestedSponsor(null);
   };
 
   const handleResetPool = () => {
@@ -206,35 +214,32 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-[#0d0414] text-neutral-100 flex flex-col justify-between items-center p-4 sm:p-8 relative">
+    <main className="min-h-screen bg-black text-neutral-100 flex flex-col justify-center items-center px-4 py-8 sm:py-12 relative antialiased selection:bg-white selection:text-black">
       {/* Top Main Section */}
       <div className="flex flex-col items-center w-full max-w-xl">
         {/* Header */}
-        <header className="text-center max-w-md mb-4">
-          <span className="inline-block px-3 py-1 mb-2 text-xs font-semibold tracking-wider text-[#d8b4fe] uppercase bg-[#8529CD]/20 border border-[#8529CD]/40 rounded-full">
-            Phnom Penh Cafe Picker
-          </span>
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
-            Cafe Roulette
+        <header className="text-center max-w-md mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white uppercase">
+            Where to Next?
           </h1>
-          <p className="mt-1 text-xs sm:text-sm text-neutral-400">
-            Spin the wheel to discover where your next coffee stop will be.
+          <p className="mt-2 text-xs sm:text-sm text-neutral-400 font-normal">
+            Spin the wheel to discover your next coffee destination.
           </p>
         </header>
 
         {/* Filter Controls */}
-        <div className="flex flex-col items-center gap-3 mb-6 w-full">
+        <div className="flex flex-col items-center gap-4 mb-8 w-full">
           {/* Branch Buttons */}
-          <div className="flex flex-wrap items-center justify-center gap-2">
+          <div className="flex flex-wrap items-center justify-center gap-1.5 p-1 rounded-full border border-neutral-800 bg-neutral-950">
             {branches.map((branch) => (
               <button
                 key={branch}
                 onClick={() => setSelectedBranch(branch)}
                 disabled={isSpinning}
-                className={`px-3.5 py-1.5 text-xs sm:text-sm font-medium rounded-full transition-all duration-150 cursor-pointer disabled:opacity-50 ${
+                className={`px-3.5 py-1.5 text-xs font-medium rounded-full transition-all duration-150 cursor-pointer disabled:opacity-40 ${
                   selectedBranch === branch
-                    ? "bg-[#8529CD] text-white font-semibold shadow-md shadow-[#8529CD]/40 border border-[#a24ce8]"
-                    : "bg-[#180926] text-neutral-300 hover:bg-[#230d37] border border-[#3b1959]"
+                    ? "bg-white text-black font-semibold shadow-sm"
+                    : "text-neutral-400 hover:text-white"
                 }`}
               >
                 {branch === "ALL" ? "All Locations" : branch}
@@ -243,17 +248,19 @@ export default function Home() {
           </div>
 
           {/* Max Choice Limits */}
-          <div className="flex items-center gap-2 text-xs text-neutral-400 mt-1">
-            <span>Max choices:</span>
+          <div className="flex items-center gap-2 text-xs text-neutral-500">
+            <span className="font-mono text-[11px] uppercase tracking-wider text-neutral-400">
+              Limit:
+            </span>
             {["ALL", 2, 3, 4, 6].map((limit) => (
               <button
                 key={limit}
                 onClick={() => setMaxChoices(limit === "ALL" ? "ALL" : limit)}
                 disabled={isSpinning}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                className={`px-2.5 py-1 rounded text-xs font-mono transition-all cursor-pointer ${
                   maxChoices === limit
-                    ? "bg-[#8529CD] text-white"
-                    : "bg-[#180926] text-neutral-400 hover:text-white border border-[#3b1959]"
+                    ? "bg-neutral-800 text-white border border-neutral-700"
+                    : "text-neutral-500 hover:text-neutral-300 border border-transparent"
                 }`}
               >
                 {limit}
@@ -263,11 +270,12 @@ export default function Home() {
 
           {/* Removed Items Counter */}
           {removedIds.length > 0 && (
-            <div className="flex items-center gap-2 text-xs text-neutral-400">
-              <span>{removedIds.length} cafe(s) excluded</span>
+            <div className="flex items-center gap-2 text-xs text-neutral-500">
+              <span>{removedIds.length} cafe(s) removed</span>
+              <span>•</span>
               <button
                 onClick={handleResetPool}
-                className="text-[#c084fc] underline hover:text-[#d8b4fe] cursor-pointer"
+                className="text-white underline hover:text-neutral-300 cursor-pointer transition-colors"
               >
                 Reset pool
               </button>
@@ -277,149 +285,138 @@ export default function Home() {
 
         {/* Wheel Area */}
         <div className="relative flex flex-col items-center justify-center">
-          {/* Top Pointer Indicator */}
-          <div className="absolute -top-3.5 z-10 w-0 h-0 border-l-[14px] border-l-transparent border-r-[14px] border-r-transparent border-t-[24px] border-t-[#8529CD] drop-shadow-[0_4px_10px_rgba(133,41,205,0.7)]" />
+          <div className="absolute -top-3 z-10 w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-t-[18px] border-t-white drop-shadow-md" />
 
-          {/* Outer Wheel Container */}
-          <div className="p-2 rounded-full bg-[#180926] border-4 border-[#30124d] shadow-[0_0_40px_rgba(133,41,205,0.3)]">
+          <div className="p-2 rounded-full bg-neutral-950 border border-neutral-800 shadow-2xl">
             <canvas
               ref={canvasRef}
               width={320}
               height={320}
-              className="rounded-full shadow-inner block"
+              className="rounded-full block"
             />
           </div>
 
-          {/* Spin Button */}
           <button
             onClick={spinWheel}
             disabled={isSpinning || activePool.length === 0}
-            className="mt-5 px-8 py-3 bg-[#8529CD] hover:bg-[#993be0] active:scale-95 text-white font-bold rounded-full shadow-lg shadow-[#8529CD]/35 transition-all text-sm sm:text-base tracking-wide uppercase disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer border border-[#a24ce8]"
+            className="mt-6 px-8 py-3 bg-white text-black hover:bg-neutral-200 active:scale-95 font-semibold rounded-full shadow-sm transition-all text-xs sm:text-sm tracking-wider uppercase disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
           >
-            {isSpinning ? "Selecting..." : "Spin the Wheel"}
+            {isSpinning ? "Selecting..." : "Spin Wheel"}
           </button>
         </div>
       </div>
 
-      {/* Sponsors Showcase Banner (Clickable to open modal) */}
-      <section className="w-full max-w-4xl mt-12 pt-6 border-t border-[#29113e]">
-        <div className="flex items-center justify-between mb-3 px-1">
-          <span className="text-[11px] font-bold tracking-wider uppercase text-[#c084fc]">
-            Featured Partners & Sponsors
-          </span>
-          <span className="text-[11px] text-neutral-500">
-            Click partner for info
-          </span>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {SPONSORS.map((sponsor) => (
-            <button
-              key={sponsor.id}
-              onClick={() => setActiveModalItem(sponsor)}
-              disabled={isSpinning}
-              className="flex items-center text-left gap-3 p-2.5 rounded-xl bg-[#160a24] hover:bg-[#200e33] border border-[#391559] hover:border-[#8529CD]/60 transition-all group cursor-pointer disabled:opacity-50"
-            >
-              <img
-                src={sponsor.logo_url}
-                alt={sponsor.name}
-                className="w-10 h-10 rounded-lg object-cover border border-[#481c6e] group-hover:border-[#8529CD] transition-colors"
-              />
-              <div className="min-w-0 flex-1">
-                <h4 className="text-xs font-semibold text-white truncate group-hover:text-[#d8b4fe]">
-                  {sponsor.name}
-                </h4>
-                <p className="text-[10px] text-neutral-400 truncate">
-                  {sponsor.branch_location} • {sponsor.description}
-                </p>
-              </div>
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {/* Shared Centered Modal for Wheel Winner OR Clicked Sponsor */}
+      {/* Result Modal with Post-Spin Sponsored Spotlight */}
       {activeModalItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md bg-[#160a24] border border-[#8529CD]/60 rounded-2xl p-6 shadow-[0_0_50px_rgba(133,41,205,0.4)] animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="relative w-full max-w-sm bg-neutral-950 border border-neutral-800 rounded-2xl p-5 sm:p-6 shadow-2xl animate-in zoom-in-95 duration-150 flex flex-col max-h-[90vh] overflow-y-auto">
             {/* Close Button */}
             <button
               onClick={() => setActiveModalItem(null)}
-              className="absolute top-4 right-4 text-neutral-400 hover:text-white p-1 rounded-full text-lg cursor-pointer leading-none"
+              className="absolute top-4 right-4 text-neutral-500 hover:text-white p-1 text-sm cursor-pointer transition-colors"
               aria-label="Close"
             >
               ✕
             </button>
 
-            {/* Header info */}
-            <div className="flex items-center gap-4">
+            {/* Winner Cafe Information */}
+            <div className="flex items-center gap-3.5">
               <img
                 src={activeModalItem.logo_url}
                 alt={activeModalItem.name}
-                className="w-16 h-16 rounded-xl object-cover border border-[#481c6e] shadow-md"
+                className="w-14 h-14 rounded-xl object-cover border border-neutral-800 shrink-0"
               />
-              <div className="flex-1 min-w-0 pr-6">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#c084fc]">
-                  {activeModalItem.category === "cafe" ? "🎉 Winner Picked!" : "⭐ Featured Partner"}
+              <div className="flex-1 min-w-0 pr-4">
+                <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-400">
+                  Selected Destination
                 </span>
-                <h2 className="text-xl font-bold text-white truncate">
+                <h2 className="text-lg font-bold text-white truncate">
                   {activeModalItem.name}
                 </h2>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-[11px] px-2 py-0.5 rounded-md font-semibold bg-[#8529CD]/20 text-[#d8b4fe] border border-[#8529CD]/40">
+                <div className="flex items-center gap-2 mt-0.5 font-mono text-[11px] text-neutral-400">
+                  <span className="px-1.5 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-neutral-300">
                     {activeModalItem.branch_location}
                   </span>
-                  <span className="text-xs text-neutral-400 capitalize">
+                  <span className="capitalize text-neutral-500">
                     • {activeModalItem.category}
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* Description */}
-            <p className="mt-4 text-sm text-neutral-300 leading-relaxed">
+            <p className="mt-3 text-xs text-neutral-400 leading-relaxed">
               {activeModalItem.description}
             </p>
 
-            {/* Action Buttons */}
-            <div className="mt-6 flex flex-col gap-2.5">
+            {/* Main Cafe Action Buttons */}
+            <div className="mt-4 flex flex-col gap-2">
               <a
                 href={activeModalItem.map}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-[#8529CD]/40 bg-[#2b1046] hover:bg-[#39155c] text-purple-100 text-sm font-semibold transition-colors"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-neutral-700 bg-neutral-900 hover:bg-neutral-800 text-neutral-200 text-xs font-medium transition-colors"
               >
-                <span>📍 View Location on Google Maps</span>
+                <span>View on Google Maps ↗</span>
               </a>
 
-              {/* Conditional bottom actions based on whether it's a cafe or sponsor */}
-              {activeModalItem.category === "cafe" ? (
-                <div className="flex gap-2.5">
-                  <button
-                    onClick={() => handleRemoveCafe(activeModalItem.id)}
-                    className="flex-1 py-2 rounded-xl border border-red-500/40 bg-red-950/30 hover:bg-red-900/40 text-red-300 text-xs font-medium transition-colors cursor-pointer"
-                  >
-                    ✕ Remove from Pool
-                  </button>
-                  <button
-                    onClick={() => {
-                      setActiveModalItem(null);
-                      spinWheel();
-                    }}
-                    className="flex-1 py-2 rounded-xl border border-[#8529CD]/50 bg-[#8529CD] hover:bg-[#993be0] text-white text-xs font-semibold transition-colors cursor-pointer"
-                  >
-                    🎲 Spin Again
-                  </button>
-                </div>
-              ) : (
+              <div className="flex gap-2">
                 <button
-                  onClick={() => setActiveModalItem(null)}
-                  className="w-full py-2 rounded-xl border border-[#8529CD]/30 bg-[#1e0b30] hover:bg-[#280e42] text-neutral-300 hover:text-white text-xs font-medium transition-colors cursor-pointer"
+                  onClick={() => handleRemoveCafe(activeModalItem.id)}
+                  className="flex-1 py-2 rounded-lg border border-neutral-800 bg-red-500/90 hover:bg-red-500 text-white text-xs font-medium transition-colors cursor-pointer"
                 >
-                  Close
+                  Remove & Respin
                 </button>
-              )}
+                <button
+                  onClick={() => {
+                    setActiveModalItem(null);
+                    spinWheel();
+                  }}
+                  className="flex-1 py-2 rounded-lg bg-white hover:bg-neutral-200 text-black text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  Spin Again
+                </button>
+              </div>
             </div>
+
+            {/* Post-Spin Sponsored Alternative Spot */}
+            {suggestedSponsor && (
+              <div className="mt-5 pt-4 border-t border-neutral-900">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] font-mono tracking-wider uppercase text-neutral-400">
+                    Also in {suggestedSponsor.branch_location}
+                  </span>
+                  <span className="text-[9px] font-mono tracking-widest uppercase text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded">
+                    Partner Pick
+                  </span>
+                </div>
+
+                <a
+                  href={suggestedSponsor.map}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between p-2.5 rounded-xl border border-neutral-900 bg-neutral-900/40 hover:bg-neutral-900 hover:border-neutral-700 transition-all group"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <img
+                      src={suggestedSponsor.logo_url}
+                      alt={suggestedSponsor.name}
+                      className="w-9 h-9 rounded-lg object-cover border border-neutral-800 shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <h4 className="text-xs font-medium text-neutral-200 truncate group-hover:text-white">
+                        {suggestedSponsor.name}
+                      </h4>
+                      <p className="text-[10px] text-neutral-500 truncate mt-0.5">
+                        {suggestedSponsor.description}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-neutral-500 group-hover:text-neutral-200 text-xs pl-2 font-mono shrink-0">
+                    ↗
+                  </span>
+                </a>
+              </div>
+            )}
           </div>
         </div>
       )}
