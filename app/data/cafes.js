@@ -2,21 +2,23 @@
 export const CAFES = [
   {
     id: 1,
-    name: "Brown Coffee Roastery",
+    name: "Brown Coffee BKK",
     category: "cafe",
     branch_location: "BKK",
     description: "A cozy modern spot known for house-roasted specialty brews, pastries, and a spacious work-friendly environment.",
-    logo_url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=150&auto=format&fit=crop&q=80",
-    map: "https://maps.google.com/?q=Brown+Coffee+BKK1"
+    logo_url: "/logos/brown-logo.jpg",
+    map: "https://www.google.com/maps/place/BROWN+Roastery+%7C+BKK/@11.5532865,104.9222608,17z/data=!3m1!4b1!4m6!3m5!1s0x310951252586ffa1:0x4052be2c82c7a733!8m2!3d11.5532865!4d104.9248357!16s%2Fg%2F11xf48rnf?entry=ttu&g_ep=EgoyMDI2MDkwMi4wIKXMDSoASAFQAw%3D%3D",
+    accent: "Popular"
   },
   {
     id: 2,
     name: "Brown Cafe TTP",
     category: "cafe",
     branch_location: "TTP",
-    description: "An artsy community cafe and gallery serving artisanal espresso, light bites, and cold brew.",
-    logo_url: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=150&auto=format&fit=crop&q=80",
-    map: "https://maps.google.com/?q=Brown+Cafe+TTP"
+    description: "A cozy modern spot known for house-roasted specialty brews, pastries, and a spacious work-friendly environment.",
+    logo_url: "/logos/brown-logo.jpg",
+    map: "https://maps.app.goo.gl/ksu7T4UXHqe1Z7888",
+    accent: "Trending"
   },
   {
     id: 3,
@@ -24,34 +26,58 @@ export const CAFES = [
     category: "cafe",
     branch_location: "TK",
     description: "Fast-casual cafe perfect for quick grab-and-go iced lattes and signature milk teas.",
-    logo_url: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=150&auto=format&fit=crop&q=80",
-    map: "https://maps.google.com/?q=Tube+Cafe+Toul+Kork"
+    logo_url: "/logos/tube-logo.jpg",
+    map: "https://maps.app.goo.gl/SULSaevJXaSFBrLs6",
+    accent: "Top Pick"
   },
   {
     id: 4,
     name: "Sam's Cafe and Restaurant",
     category: "cafe",
-    branch_location: "BKK",
+    branch_location: "2004",
     description: "Ethically sourced fair-trade beans roasted on-site with rich flavors and hearty brunch options.",
-    logo_url: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=150&auto=format&fit=crop&q=80",
-    map: "https://maps.google.com/?q=Sam's+Cafe+and+Restaurant+BKK"
+    logo_url: "/logos/sams-cafe-and-restaurant-logo.jpg",
+    map: "https://maps.app.goo.gl/yUHugSEfPxTa31Xa9",
+    accent: "Featured"
   },
   {
     id: 5,
-    name: "Kaifun Cafe TTP",
+    name: "Kaifun Cafe 288",
     category: "cafe",
-    branch_location: "TTP",
+    branch_location: "BKK",
     description: "Australian-inspired cafe vibe offering smashed avocado toast, matcha lattes, and relaxed outdoor seating.",
-    logo_url: "https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=150&auto=format&fit=crop&q=80",
-    map: "https://maps.google.com/?q=Kaifun+Cafe+TTP"
+    logo_url: "/logos/kaifun-logo.png",
+    map: "https://maps.app.goo.gl/9DuZ1DGmtAmFre326",
+    accent: "Signature"
   },
   {
     id: 6,
     name: "Temple Coffee 'n Bakery",
     category: "cafe",
-    branch_location: "TK",
+    branch_location: "BKK",
     description: "Traditional Khmer architectural accents combined with modern espresso and freshly baked croissants.",
-    logo_url: "https://images.unsplash.com/photo-1517256064527-09c73fc73e38?w=150&auto=format&fit=crop&q=80",
-    map: "https://maps.google.com/?q=Temple+Coffee+TK"
+    logo_url: "/logos/temple-logo.png",
+    map: "https://maps.app.goo.gl/QshJ7S5puxGyVeL37",
+    accent: "Trending"
+  },
+   {
+    id: 7,
+    name: "Haru Cafe",
+    category: "cafe",
+    branch_location: "BKK",
+    description: "Traditional Khmer architectural accents combined with modern espresso and freshly baked croissants.",
+    logo_url: "/logos/haru-cafe-logo.jpg",
+    map: "https://maps.app.goo.gl/Yc1GNQXeStap4ANu8",
+    accent: "New"
+  },
+   {
+    id: 8,
+    name: "Umi Matcha",
+    category: "cafe",
+    branch_location: "TTP",
+    description: "Traditional Khmer architectural accents combined with modern espresso and freshly baked croissants.",
+    logo_url: "/logos/umi-matcha-logo.png",
+    map: "https://maps.app.goo.gl/W7Kk4Kwg2pTm7VsD9",
+    accent: "Featured"
   }
 ];

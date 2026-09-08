@@ -1,38 +1,41 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { CAFES } from "@/app/data/cafes";
 import { SPONSORS } from "@/app/data/sponsors";
 
-const WHEEL_PALETTE = [
-  "#8529CD",
-  "#06B6D4",
-  "#F59E0B",
-  "#EC4899",
-  "#10B981",
-  "#3B82F6",
-  "#F97316",
-  "#6366F1",
-  "#14B8A6",
-  "#E11D48",
+// Clean color accents for card styling
+const CARD_ACCENTS = [
+  { name: "Popular", color: "#4b69ff", bg: "from-blue-600/20 to-transparent", border: "border-blue-500" },
+  { name: "Trending", color: "#8847ff", bg: "from-purple-600/20 to-transparent", border: "border-purple-500" },
+  { name: "Top Pick", color: "#d32ce6", bg: "from-pink-600/20 to-transparent", border: "border-pink-500" },
+  { name: "Featured", color: "#eb4b4b", bg: "from-red-600/20 to-transparent", border: "border-red-500" },
+  { name: "Signature", color: "#ffd700", bg: "from-amber-400/25 to-transparent", border: "border-yellow-400" },
+  { name: "New", color: "#4b69ff", bg: "from-green-600/20 to-transparent", border: "border-green-500" },
 ];
 
-export default function Home() {
-  const canvasRef = useRef(null);
+const CARD_WIDTH = 180;
+const CARD_GAP = 12;
+const TOTAL_SLOT_WIDTH = CARD_WIDTH + CARD_GAP;
+const REEL_SIZE = 65;
+const WINNER_INDEX = 50; // Target landing position within the reel
 
+export default function Home() {
   const [selectedBranch, setSelectedBranch] = useState("ALL");
   const [removedIds, setRemovedIds] = useState([]);
-  const [maxChoices, setMaxChoices] = useState("ALL");
-  const [activePool, setActivePool] = useState([]);
   const [activeModalItem, setActiveModalItem] = useState(null);
   const [isSpinning, setIsSpinning] = useState(false);
-
-  // Store the contextual sponsor picked specifically for this spin result
   const [suggestedSponsor, setSuggestedSponsor] = useState(null);
 
+  const [reelItems, setReelItems] = useState([]);
+  const [translateX, setTranslateX] = useState(0);
+  const [transitionStyle, setTransitionStyle] = useState("none");
+
+  const lastTickIndexRef = useRef(-1);
+  const animationFrameRef = useRef(null);
   const branches = ["ALL", "BKK", "TTP", "TK"];
 
-  // 1. Filter available cafes based on branch & removals
+  // Filter available cafes
   const availableCafes = useMemo(() => {
     return CAFES.filter((cafe) => {
       const matchCategory = cafe.category === "cafe";
@@ -43,156 +46,196 @@ export default function Home() {
     });
   }, [selectedBranch, removedIds]);
 
-  // 2. Uniform sample up to maxChoices
+ const ACCENT_MAP = Object.fromEntries(CARD_ACCENTS.map((a) => [a.name, a]));
+const DEFAULT_ACCENT = CARD_ACCENTS[0]; // fallback if a cafe has no/unknown accent
+
+function shuffledCopy(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+const createReel = useCallback(() => {
+  if (availableCafes.length === 0) return [];
+  const laps = Math.ceil(REEL_SIZE / availableCafes.length);
+  const reel = Array.from({ length: laps }, () => shuffledCopy(availableCafes)).flat();
+  return reel.slice(0, REEL_SIZE).map((cafe, i) => ({
+    ...cafe,
+    reelAccent: ACCENT_MAP[cafe.accent] || DEFAULT_ACCENT,
+    instanceId: `${cafe.id}-${i}-${Date.now()}`,
+  }));
+}, [availableCafes]);
+
+  // Make sure reel is always populated & previewable before spinning
   useEffect(() => {
-    if (availableCafes.length === 0) {
-      setActivePool([]);
-      return;
+    if (!isSpinning) {
+      setTransitionStyle("none");
+      setTranslateX(0);
+      setReelItems(createReel());
+      lastTickIndexRef.current = -1;
     }
+  }, [createReel, isSpinning]);
 
-    if (maxChoices === "ALL" || Number(maxChoices) >= availableCafes.length) {
-      setActivePool(availableCafes);
-    } else {
-      const shuffled = [...availableCafes].sort(() => 0.5 - Math.random());
-      setActivePool(shuffled.slice(0, Number(maxChoices)));
-    }
-  }, [availableCafes, maxChoices]);
+  let audioCtx = null;
+const getAudioContext = () => {
+  if (!audioCtx) {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return null;
+    audioCtx = new AudioCtx();
+  }
+  if (audioCtx.state === "suspended") {
+    audioCtx.resume();
+  }
+  return audioCtx;
+};
 
-  const currentAngleRef = useRef(0);
-  const animationFrameRef = useRef(null);
 
-  // Draw wheel
-  const drawWheel = (angle) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    const numSegments = activePool.length;
+ const playTickSound = (speedFactor = 0) => {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
 
-    if (numSegments === 0) {
-      ctx.fillStyle = "#121212";
-      ctx.beginPath();
-      ctx.arc(canvas.width / 2, canvas.height / 2, canvas.width / 2 - 12, 0, 2 * Math.PI);
-      ctx.fill();
-      return;
-    }
+    // speedFactor (0 -> 1) lets ticks get higher-pitched as the reel slows
+    const baseFreq = 800 + speedFactor * 600;
 
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
-    const radius = centerX - 12;
-    const arcSize = (2 * Math.PI) / numSegments;
+    osc.type = "square";
+    osc.frequency.setValueAtTime(baseFreq, ctx.currentTime);
 
-    activePool.forEach((cafe, i) => {
-      const segmentAngle = angle + i * arcSize;
+    gain.gain.setValueAtTime(0.06, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.02);
 
-      ctx.beginPath();
-      ctx.fillStyle = WHEEL_PALETTE[i % WHEEL_PALETTE.length];
-      ctx.moveTo(centerX, centerY);
-      ctx.arc(centerX, centerY, radius, segmentAngle, segmentAngle + arcSize);
-      ctx.lineTo(centerX, centerY);
-      ctx.fill();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
 
-      ctx.strokeStyle = "#000000";
-      ctx.lineWidth = 2.5;
-      ctx.stroke();
+    osc.start();
+    osc.stop(ctx.currentTime + 0.025);
+  } catch {
+    // AudioContext unavailable or blocked
+  }
+};
 
-      ctx.save();
-      ctx.translate(centerX, centerY);
-      ctx.rotate(segmentAngle + arcSize / 2);
-      ctx.textAlign = "right";
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 13px system-ui, -apple-system, sans-serif";
-      ctx.shadowColor = "rgba(0, 0, 0, 0.75)";
-      ctx.shadowBlur = 4;
+// Big reveal sound on landing — layered "unlock clunk" + rising "shimmer"
+const playRevealSound = () => {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
 
-      const displayName =
-        cafe.name.length > 15 ? cafe.name.slice(0, 13) + "…" : cafe.name;
-      ctx.fillText(displayName, radius - 20, 5);
-      ctx.restore();
-    });
+    // Layer 1: low mechanical "clunk"
+    const clunkOsc = ctx.createOscillator();
+    const clunkGain = ctx.createGain();
+    clunkOsc.type = "triangle";
+    clunkOsc.frequency.setValueAtTime(180, now);
+    clunkOsc.frequency.exponentialRampToValueAtTime(60, now + 0.15);
+    clunkGain.gain.setValueAtTime(0.3, now);
+    clunkGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+    clunkOsc.connect(clunkGain);
+    clunkGain.connect(ctx.destination);
+    clunkOsc.start(now);
+    clunkOsc.stop(now + 0.2);
 
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
-    ctx.lineWidth = 2;
-    ctx.stroke();
+    // Layer 2: rising shimmer/chime, starts slightly after the clunk
+    const shimmerStart = now + 0.08;
+    const shimmerOsc = ctx.createOscillator();
+    const shimmerGain = ctx.createGain();
+    shimmerOsc.type = "sine";
+    shimmerOsc.frequency.setValueAtTime(500, shimmerStart);
+    shimmerOsc.frequency.exponentialRampToValueAtTime(1400, shimmerStart + 0.35);
+    shimmerGain.gain.setValueAtTime(0.0001, shimmerStart);
+    shimmerGain.gain.exponentialRampToValueAtTime(0.2, shimmerStart + 0.05);
+    shimmerGain.gain.exponentialRampToValueAtTime(0.001, shimmerStart + 0.4);
+    shimmerOsc.connect(shimmerGain);
+    shimmerGain.connect(ctx.destination);
+    shimmerOsc.start(shimmerStart);
+    shimmerOsc.stop(shimmerStart + 0.4);
 
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, 30, 0, 2 * Math.PI);
-    ctx.fillStyle = "#000000";
-    ctx.fill();
-    ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = 2.5;
-    ctx.stroke();
-
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "16px sans-serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("☕", centerX, centerY);
-  };
-
-  useEffect(() => {
-    drawWheel(currentAngleRef.current);
-  }, [activePool]);
-
-  // Spin with ease-out cubic
-  const spinWheel = () => {
-    if (isSpinning || activePool.length === 0) return;
+    // Layer 3: sparkle harmonic on top, for extra "win" brightness
+    const sparkleStart = now + 0.12;
+    const sparkleOsc = ctx.createOscillator();
+    const sparkleGain = ctx.createGain();
+    sparkleOsc.type = "sine";
+    sparkleOsc.frequency.setValueAtTime(2100, sparkleStart);
+    sparkleGain.gain.setValueAtTime(0.0001, sparkleStart);
+    sparkleGain.gain.exponentialRampToValueAtTime(0.08, sparkleStart + 0.03);
+    sparkleGain.gain.exponentialRampToValueAtTime(0.001, sparkleStart + 0.3);
+    sparkleOsc.connect(sparkleGain);
+    sparkleGain.connect(ctx.destination);
+    sparkleOsc.start(sparkleStart);
+    sparkleOsc.stop(sparkleStart + 0.3);
+  } catch {
+    // AudioContext unavailable or blocked
+  }
+};
+  const startSpin = () => {
+    if (isSpinning || availableCafes.length === 0) return;
 
     setIsSpinning(true);
     setActiveModalItem(null);
     setSuggestedSponsor(null);
 
-    const fullRotations = (6 + Math.random() * 4) * (2 * Math.PI);
-    const extraStop = Math.random() * (2 * Math.PI);
-    const totalDelta = fullRotations + extraStop;
+    // Build the tape of items
+    const generatedReel = createReel();
+    const chosenWinner = generatedReel[WINNER_INDEX];
 
-    const startAngle = currentAngleRef.current;
-    const duration = 4300;
-    let startTime = null;
+    // Jitter landing offset (-70px to +70px) prevents landing dead-center every time
+    const jitter = (Math.random() - 0.5) * (CARD_WIDTH - 28);
+    const targetOffset = -(WINNER_INDEX * TOTAL_SLOT_WIDTH + jitter);
 
-    const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+    // Reset position instantly
+    setTransitionStyle("none");
+    setTranslateX(0);
+    setReelItems(generatedReel);
+    lastTickIndexRef.current = -1;
 
-    const animate = (timestamp) => {
-      if (!startTime) startTime = timestamp;
-      const elapsed = timestamp - startTime;
-      const progress = Math.min(elapsed / duration, 1);
+    // Trigger the horizontal spinning animation
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setTransitionStyle("transform 5.2s cubic-bezier(0.12, 0.8, 0.18, 1)");
+        setTranslateX(targetOffset);
 
-      const currentRotation = startAngle + totalDelta * easeOutCubic(progress);
-      currentAngleRef.current = currentRotation;
-      drawWheel(currentRotation);
+        const startTime = performance.now();
+        const duration = 5200;
 
-      if (progress < 1) {
-        animationFrameRef.current = requestAnimationFrame(animate);
-      } else {
-        const numSegments = activePool.length;
-        const arcSize = (2 * Math.PI) / numSegments;
-        const pointerAngle = (3 * Math.PI) / 2;
+        const checkTicker = (now) => {
+          const elapsed = now - startTime;
+          const progress = Math.min(elapsed / duration, 1);
 
-        const normalizedAngle =
-          ((currentRotation % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
-        const relativeAngle =
-          (pointerAngle - normalizedAngle + 2 * Math.PI) % (2 * Math.PI);
-        const winningIndex = Math.floor(relativeAngle / arcSize) % numSegments;
-        const winner = activePool[winningIndex];
+          // Easing calculation to sync audio clicks
+          const easedProgress = 1 - Math.pow(1 - progress, 4);
+          const currentPos = Math.abs(targetOffset * easedProgress);
+          const currentSlot = Math.floor((currentPos + CARD_WIDTH / 2) / TOTAL_SLOT_WIDTH);
 
-        // Pick a relevant partner matching the winning location
-        if (SPONSORS && SPONSORS.length > 0) {
-          const matched = SPONSORS.filter(
-            (s) => s.branch_location === winner.branch_location
-          );
-          const pool = matched.length > 0 ? matched : SPONSORS;
-          setSuggestedSponsor(pool[Math.floor(Math.random() * pool.length)]);
-        }
+       if (currentSlot !== lastTickIndexRef.current && currentSlot <= WINNER_INDEX) {
+            lastTickIndexRef.current = currentSlot;
+            playTickSound(easedProgress);
+          }
 
-        setActiveModalItem(winner);
-        setIsSpinning(false);
-      }
-    };
+          if (progress < 1) {
+            animationFrameRef.current = requestAnimationFrame(checkTicker);
+          } else {
+            playRevealSound();
+            // Spin finished
+            if (SPONSORS && SPONSORS.length > 0) {
+              const matched = SPONSORS.filter(
+                (s) => s.branch_location === chosenWinner.branch_location
+              );
+              const pool = matched.length > 0 ? matched : SPONSORS;
+              setSuggestedSponsor(pool[Math.floor(Math.random() * pool.length)]);
+            }
+            setActiveModalItem(chosenWinner);
+            setIsSpinning(false);
+          }
+        };
 
-    animationFrameRef.current = requestAnimationFrame(animate);
+        animationFrameRef.current = requestAnimationFrame(checkTicker);
+      });
+    });
   };
 
   const handleRemoveCafe = (cafeId) => {
@@ -201,160 +244,182 @@ export default function Home() {
     setSuggestedSponsor(null);
   };
 
-  const handleResetPool = () => {
-    setRemovedIds([]);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-    };
-  }, []);
-
   return (
-    <main className="min-h-screen bg-black text-neutral-100 flex flex-col justify-center items-center px-4 py-8 sm:py-12 relative antialiased selection:bg-white selection:text-black">
-      {/* Top Main Section */}
-      <div className="flex flex-col items-center w-full max-w-xl">
+    <main className="min-h-screen bg-[#0d0f12] text-neutral-100 flex flex-col  items-center px-4 py-8 relative overflow-hidden select-none">
+      {/* Background Ambience */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(245,158,11,0.06),transparent_70%)] pointer-events-none" />
+
+      <div className="flex flex-col items-center w-full max-w-4xl relative z-10">
         {/* Header */}
-        <header className="text-center max-w-md mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white uppercase">
-            Where to Next?
+        <header className="text-center mb-8">
+        
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-wider text-white uppercase drop-shadow-md">
+            Where to next?  
           </h1>
-          <p className="mt-2 text-xs sm:text-sm text-neutral-400 font-normal">
-            Spin the wheel to discover your next coffee destination.
+          <p className="mt-1 text-xs sm:text-sm text-neutral-400">
+            Spin to select your next cafe destination.
           </p>
         </header>
 
-        {/* Filter Controls */}
-        <div className="flex flex-col items-center gap-4 mb-8 w-full">
-          {/* Branch Buttons */}
-          <div className="flex flex-wrap items-center justify-center gap-1.5 p-1 rounded-full border border-neutral-800 bg-neutral-950">
-            {branches.map((branch) => (
-              <button
-                key={branch}
-                onClick={() => setSelectedBranch(branch)}
-                disabled={isSpinning}
-                className={`px-3.5 py-1.5 text-xs font-medium rounded-full transition-all duration-150 cursor-pointer disabled:opacity-40 ${
-                  selectedBranch === branch
-                    ? "bg-white text-black font-semibold shadow-sm"
-                    : "text-neutral-400 hover:text-white"
-                }`}
-              >
-                {branch === "ALL" ? "All Locations" : branch}
-              </button>
-            ))}
-          </div>
+        {/* Branch Filter Tabs */}
+        <div className="flex flex-wrap items-center justify-center gap-1.5 p-1 rounded-lg border border-neutral-800/80 bg-neutral-950/60 backdrop-blur-md mb-8">
+          {branches.map((branch) => (
+            <button
+              key={branch}
+              onClick={() => setSelectedBranch(branch)}
+              disabled={isSpinning}
+              className={`px-4 py-1.5 text-xs font-semibold uppercase tracking-wider rounded transition-all cursor-pointer disabled:opacity-40 ${
+                selectedBranch === branch
+                  ? "bg-amber-500 text-black shadow-lg shadow-amber-500/20"
+                  : "text-neutral-400 hover:text-white"
+              }`}
+            >
+              {branch === "ALL" ? "All Locations" : branch}
+            </button>
+          ))}
+        </div>
 
-          {/* Max Choice Limits */}
-          <div className="flex items-center gap-2 text-xs text-neutral-500">
-            <span className="font-mono text-[11px] uppercase tracking-wider text-neutral-400">
-              Limit:
-            </span>
-            {["ALL", 2, 3, 4, 6].map((limit) => (
-              <button
-                key={limit}
-                onClick={() => setMaxChoices(limit === "ALL" ? "ALL" : limit)}
-                disabled={isSpinning}
-                className={`px-2.5 py-1 rounded text-xs font-mono transition-all cursor-pointer ${
-                  maxChoices === limit
-                    ? "bg-neutral-800 text-white border border-neutral-700"
-                    : "text-neutral-500 hover:text-neutral-300 border border-transparent"
-                }`}
-              >
-                {limit}
-              </button>
-            ))}
-          </div>
+        {/* Horizontal Spinning Reel */}
+        <div className="relative w-full max-w-3xl overflow-hidden rounded-xl border-2 border-neutral-800 bg-[#12151b] shadow-[inset_0_0_60px_rgba(0,0,0,0.9)] py-6">
+          {/* Top & Bottom Selection Indicators */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[9px] border-l-transparent border-r-[9px] border-r-transparent border-t-[14px] border-t-amber-400 z-30 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]" />
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[9px] border-l-transparent border-r-[9px] border-r-transparent border-b-[14px] border-b-amber-400 z-30 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]" />
 
-          {/* Removed Items Counter */}
+          {/* Center Indicator Line */}
+          <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[2px] bg-amber-400 z-20 shadow-[0_0_12px_#fbbf24] opacity-90" />
+
+          {/* Horizontal Vignette Fade */}
+          <div className="absolute inset-y-0 left-0 w-28 bg-gradient-to-r from-[#12151b] via-[#12151b]/80 to-transparent z-10 pointer-events-none" />
+          <div className="absolute inset-y-0 right-0 w-28 bg-gradient-to-l from-[#12151b] via-[#12151b]/80 to-transparent z-10 pointer-events-none" />
+
+          {/* Horizontal Track */}
+          <div className="h-[210px] flex items-center relative">
+            <div
+              className="flex items-center absolute"
+              style={{
+                left: "50%",
+                marginLeft: `-${CARD_WIDTH / 2}px`, // Anchors index 0 dead-center on load
+                gap: `${CARD_GAP}px`,
+                transform: `translate3d(${translateX}px, 0, 0)`,
+                transition: transitionStyle,
+                willChange: "transform",
+              }}
+            >
+              {reelItems.map((cafe) => (
+                <div
+                  key={cafe.instanceId}
+                  style={{ width: `${CARD_WIDTH}px` }}
+                  className={`h-[185px] shrink-0 bg-gradient-to-b ${cafe.reelAccent.bg} bg-neutral-900/90 rounded-md border-b-4 ${cafe.reelAccent.border} border-t border-x border-neutral-800/80 p-3 flex flex-col justify-between relative shadow-lg group`}
+                >
+                  <div className="flex justify-between items-start">
+                    <span className="text-[10px] font-mono text-neutral-400 uppercase">
+                      {cafe.branch_location}
+                    </span>
+                    <span
+                      className="text-[9px] font-mono font-bold tracking-wider uppercase px-1 rounded"
+                      style={{ color: cafe.reelAccent.color }}
+                    >
+                      {cafe.reelAccent.name}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col items-center my-auto">
+                    <img
+                      src={cafe.logo_url}
+                      alt={cafe.name}
+                      className="w-16 h-16 rounded-lg object-cover border border-neutral-700/60 shadow-md"
+                    />
+                  </div>
+
+                  <div className="text-center">
+                    <h4 className="text-xs font-bold text-neutral-100 truncate">
+                      {cafe.name}
+                    </h4>
+                    <p className="text-[10px] text-neutral-400 capitalize">
+                      {cafe.category}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Action Controls */}
+        <div className="mt-8 flex flex-col items-center gap-3">
+          <button
+            onClick={startSpin}
+            disabled={isSpinning || availableCafes.length === 0}
+            className="px-10 py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 active:scale-95 text-black font-extrabold rounded shadow-[0_0_25px_rgba(245,158,11,0.25)] transition-all uppercase tracking-widest text-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer border border-amber-300/30"
+          >
+            {isSpinning ? "Selecting Cafe..." : "Spin"}
+          </button>
+
           {removedIds.length > 0 && (
             <div className="flex items-center gap-2 text-xs text-neutral-500">
-              <span>{removedIds.length} cafe(s) removed</span>
+              <span>{removedIds.length} cafe(s) excluded</span>
               <span>•</span>
               <button
-                onClick={handleResetPool}
-                className="text-white underline hover:text-neutral-300 cursor-pointer transition-colors"
+                onClick={() => setRemovedIds([])}
+                className="text-amber-500 underline hover:text-amber-400 cursor-pointer"
               >
-                Reset pool
+                Reset excluded
               </button>
             </div>
           )}
         </div>
-
-        {/* Wheel Area */}
-        <div className="relative flex flex-col items-center justify-center">
-          <div className="absolute -top-3 z-10 w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-t-[18px] border-t-white drop-shadow-md" />
-
-          <div className="p-2 rounded-full bg-neutral-950 border border-neutral-800 shadow-2xl">
-            <canvas
-              ref={canvasRef}
-              width={320}
-              height={320}
-              className="rounded-full block"
-            />
-          </div>
-
-          <button
-            onClick={spinWheel}
-            disabled={isSpinning || activePool.length === 0}
-            className="mt-6 px-8 py-3 bg-white text-black hover:bg-neutral-200 active:scale-95 font-semibold rounded-full shadow-sm transition-all text-xs sm:text-sm tracking-wider uppercase disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-          >
-            {isSpinning ? "Selecting..." : "Spin Wheel"}
-          </button>
-        </div>
       </div>
 
-      {/* Result Modal with Post-Spin Sponsored Spotlight */}
+      {/* Selected Cafe Modal */}
       {activeModalItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="relative w-full max-w-sm bg-neutral-950 border border-neutral-800 rounded-2xl p-5 sm:p-6 shadow-2xl animate-in zoom-in-95 duration-150 flex flex-col max-h-[90vh] overflow-y-auto">
-            {/* Close Button */}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="relative w-full max-w-sm bg-neutral-950 border border-neutral-800 rounded-xl p-6 shadow-2xl animate-in zoom-in-95 duration-150">
+            {/* Accent Top Strip */}
+            <div
+              className="h-1.5 w-full rounded-t -mt-6 -mx-6 mb-6"
+              style={{ backgroundColor: activeModalItem.reelAccent.color }}
+            />
+
             <button
               onClick={() => setActiveModalItem(null)}
-              className="absolute top-4 right-4 text-neutral-500 hover:text-white p-1 text-sm cursor-pointer transition-colors"
+              className="absolute top-4 right-4 text-neutral-400 hover:text-white text-sm cursor-pointer"
               aria-label="Close"
             >
               ✕
             </button>
 
-            {/* Winner Cafe Information */}
-            <div className="flex items-center gap-3.5">
+            <div className="flex items-center gap-4">
               <img
                 src={activeModalItem.logo_url}
                 alt={activeModalItem.name}
-                className="w-14 h-14 rounded-xl object-cover border border-neutral-800 shrink-0"
+                className="w-16 h-16 rounded-xl object-cover border border-neutral-700 shadow-md shrink-0"
               />
-              <div className="flex-1 min-w-0 pr-4">
-                <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-400">
-                  Selected Destination
+              <div className="min-w-0 flex-1">
+                <span
+                  className="text-[10px] font-mono uppercase font-bold tracking-widest"
+                  style={{ color: activeModalItem.reelAccent.color }}
+                >
+                  Selected Cafe
                 </span>
-                <h2 className="text-lg font-bold text-white truncate">
+                <h2 className="text-lg font-extrabold text-white truncate">
                   {activeModalItem.name}
                 </h2>
-                <div className="flex items-center gap-2 mt-0.5 font-mono text-[11px] text-neutral-400">
-                  <span className="px-1.5 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-neutral-300">
-                    {activeModalItem.branch_location}
-                  </span>
-                  <span className="capitalize text-neutral-500">
-                    • {activeModalItem.category}
-                  </span>
-                </div>
+                <span className="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-mono bg-neutral-900 border border-neutral-800 text-neutral-300">
+                  {activeModalItem.branch_location}
+                </span>
               </div>
             </div>
 
-            <p className="mt-3 text-xs text-neutral-400 leading-relaxed">
+            <p className="mt-4 text-xs text-neutral-400 leading-relaxed">
               {activeModalItem.description}
             </p>
 
-            {/* Main Cafe Action Buttons */}
-            <div className="mt-4 flex flex-col gap-2">
+            <div className="mt-5 flex flex-col gap-2">
               <a
                 href={activeModalItem.map}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-neutral-700 bg-neutral-900 hover:bg-neutral-800 text-neutral-200 text-xs font-medium transition-colors"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-neutral-200 text-xs font-semibold transition-colors"
               >
                 <span>View on Google Maps ↗</span>
               </a>
@@ -362,31 +427,31 @@ export default function Home() {
               <div className="flex gap-2">
                 <button
                   onClick={() => handleRemoveCafe(activeModalItem.id)}
-                  className="flex-1 py-2 rounded-lg border border-neutral-800 bg-red-500/90 hover:bg-red-500 text-white text-xs font-medium transition-colors cursor-pointer"
+                  className="flex-1 py-2 rounded bg-red-950/40 border border-red-900 hover:bg-red-900/60 text-red-300 text-xs font-semibold transition-colors cursor-pointer"
                 >
-                  Remove & Respin
+                  Exclude Cafe
                 </button>
                 <button
                   onClick={() => {
                     setActiveModalItem(null);
-                    spinWheel();
+                    startSpin();
                   }}
-                  className="flex-1 py-2 rounded-lg bg-white hover:bg-neutral-200 text-black text-xs font-semibold transition-colors cursor-pointer"
+                  className="flex-1 py-2 rounded bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold transition-colors cursor-pointer"
                 >
                   Spin Again
                 </button>
               </div>
             </div>
 
-            {/* Post-Spin Sponsored Alternative Spot */}
+            {/* Sponsored Suggestion */}
             {suggestedSponsor && (
               <div className="mt-5 pt-4 border-t border-neutral-900">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[10px] font-mono tracking-wider uppercase text-neutral-400">
-                    Also in {suggestedSponsor.branch_location}
+                    Nearby In {suggestedSponsor.branch_location}
                   </span>
                   <span className="text-[9px] font-mono tracking-widest uppercase text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded">
-                    Partner Pick
+                    Sponsored
                   </span>
                 </div>
 
@@ -394,26 +459,21 @@ export default function Home() {
                   href={suggestedSponsor.map}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-between p-2.5 rounded-xl border border-neutral-900 bg-neutral-900/40 hover:bg-neutral-900 hover:border-neutral-700 transition-all group"
+                  className="flex items-center justify-between p-2 rounded-lg border border-neutral-900 bg-neutral-900/50 hover:bg-neutral-900 transition-all group"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <img
                       src={suggestedSponsor.logo_url}
                       alt={suggestedSponsor.name}
-                      className="w-9 h-9 rounded-lg object-cover border border-neutral-800 shrink-0"
+                      className="w-8 h-8 rounded object-cover border border-neutral-800"
                     />
                     <div className="min-w-0">
                       <h4 className="text-xs font-medium text-neutral-200 truncate group-hover:text-white">
                         {suggestedSponsor.name}
                       </h4>
-                      <p className="text-[10px] text-neutral-500 truncate mt-0.5">
-                        {suggestedSponsor.description}
-                      </p>
                     </div>
                   </div>
-                  <span className="text-neutral-500 group-hover:text-neutral-200 text-xs pl-2 font-mono shrink-0">
-                    ↗
-                  </span>
+                  <span className="text-neutral-500 group-hover:text-white text-xs pl-2">↗</span>
                 </a>
               </div>
             )}

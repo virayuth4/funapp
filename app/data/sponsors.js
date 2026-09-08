@@ -18,15 +18,7 @@ export const SPONSORS = [
     logo_url: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=150&auto=format&fit=crop&q=80",
     map: "https://maps.google.com/?q=Smart+Shop+Toul+Kork"
   },
-  {
-    id: 3,
-    name: "RielPoint",
-    category: "sponsor",
-    branch_location: "TTP",
-    description: "Leading Cashback website in Cambodia.",
-    logo_url: "https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?w=150&auto=format&fit=crop&q=80",
-    map: "https://maps.google.com/?q=Cellcard+Customer+Experience+TTP"
-  },
+
 
 
 ];
