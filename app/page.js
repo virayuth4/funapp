@@ -5,6 +5,8 @@ import { CAFES } from "@/app/data/cafes";
 import { SPONSORS } from "@/app/data/sponsors";
 import { REVIEWS } from "@/app/data/reviews";
 import Link from "next/link";
+import Image from "next/image";
+import ViewAllModal from "./Components/viewAllModal";
 
 // Clean color accents for card styling
 const CARD_ACCENTS = [
@@ -14,6 +16,7 @@ const CARD_ACCENTS = [
   { name: "Featured", color: "#eb4b4b", bg: "from-red-600/20 to-transparent", border: "border-red-500" },
   { name: "Signature", color: "#ffd700", bg: "from-amber-400/25 to-transparent", border: "border-yellow-400" },
   { name: "New", color: "#4b69ff", bg: "from-green-600/20 to-transparent", border: "border-green-500" },
+  { name: "Staff Favorite", color: "#22d3ee", bg: "from-cyan-500/25 to-transparent", border: "border-cyan-400" },
 ];
 
 const CARD_WIDTH = 180;
@@ -34,23 +37,46 @@ export default function Home() {
   const [reelItems, setReelItems] = useState([]);
   const [translateX, setTranslateX] = useState(0);
   const [transitionStyle, setTransitionStyle] = useState("none");
+  const [rollHistory, setRollHistory] = useState(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const stored = localStorage.getItem("cafeRollHistory");
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [showAllModal, setShowAllModal] = useState(false);
+
+  const HISTORY_KEY = "cafeRollHistory";
+  const MAX_HISTORY = 20;
 
   const lastTickIndexRef = useRef(-1);
   const animationFrameRef = useRef(null);
   const branches = ["ALL", "BKK", "TTP", "TK"];
   
-  useEffect(() => {
+
+const openCafeModal = (cafe) => {
+  setActiveModalItem(cafe);
   setShowReviews(false);
-}, [activeModalItem]);
+  setShowPartnerInfo(false);
+};
+
+const closeCafeModal = () => {
+  setActiveModalItem(null);
+  setShowReviews(false);
+  setShowPartnerInfo(false);
+};
+
 
   // Filter available cafes
   const availableCafes = useMemo(() => {
     return CAFES.filter((cafe) => {
-      const matchCategory = cafe.category === "cafe";
+      const matchInRoll = cafe.in_roll === true;
       const matchBranch =
         selectedBranch === "ALL" || cafe.branch_location === selectedBranch;
       const notRemoved = !removedIds.includes(cafe.id);
-      return matchCategory && matchBranch && notRemoved;
+      return matchInRoll && matchBranch && notRemoved;
     });
   }, [selectedBranch, removedIds]);
 
@@ -87,17 +113,58 @@ const createReel = useCallback(() => {
     }
   }, [createReel, isSpinning]);
 
-  let audioCtx = null;
+
+
+const addToHistory = useCallback((cafe) => {
+  const entry = {
+    id: cafe.id,
+    name: cafe.name,
+    branch_location: cafe.branch_location,
+    logo_url: cafe.logo_url,
+    accentColor: cafe.reelAccent?.color,
+    timestamp: Date.now(),
+  };
+
+  setRollHistory((prev) => {
+    const updated = [entry, ...prev].slice(0, MAX_HISTORY);
+    try {
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+    } catch {
+      // storage full or blocked — fail silently, state still updates
+    }
+    return updated;
+  });
+}, []);
+
+const clearHistory = () => {
+  setRollHistory([]);
+  try {
+    localStorage.removeItem(HISTORY_KEY);
+  } catch {}
+};
+
+const audioCtxRef = useRef(null);
+
 const getAudioContext = () => {
-  if (!audioCtx) {
+  if (typeof window === "undefined") return null;
+
+  if (!audioCtxRef.current) {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     if (!AudioCtx) return null;
-    audioCtx = new AudioCtx();
+    audioCtxRef.current = new AudioCtx();
   }
-  if (audioCtx.state === "suspended") {
-    audioCtx.resume();
+
+  if (audioCtxRef.current.state === "suspended") {
+    audioCtxRef.current.resume();
   }
-  return audioCtx;
+
+  return audioCtxRef.current;
+};
+
+const closeAllModals = () => {
+  setShowPartnerInfo(false);
+  setActiveModalItem(null);
+  setSuggestedSponsor(null);
 };
 
 
@@ -227,16 +294,18 @@ const playRevealSound = () => {
           if (progress < 1) {
             animationFrameRef.current = requestAnimationFrame(checkTicker);
           } else {
-            playRevealSound();
+           playRevealSound();
             // Spin finished
-            if (SPONSORS && SPONSORS.length > 0) {
-              const matched = SPONSORS.filter(
+            const sponsors = CAFES.filter((c) => c.is_sponsored === true);
+            if (sponsors.length > 0) {
+              const matched = sponsors.filter(
                 (s) => s.branch_location === chosenWinner.branch_location
               );
-              const pool = matched.length > 0 ? matched : SPONSORS;
+              const pool = matched.length > 0 ? matched : sponsors;
               setSuggestedSponsor(pool[Math.floor(Math.random() * pool.length)]);
             }
             setActiveModalItem(chosenWinner);
+            addToHistory(chosenWinner); 
             setIsSpinning(false);
           }
         };
@@ -254,6 +323,19 @@ const playRevealSound = () => {
 
   return (
     <main className="min-h-screen bg-[#0d0f12] text-neutral-100 flex flex-col  items-center px-4 py-8 relative overflow-hidden select-none">
+    <style jsx global>{`
+  @keyframes pulseGlow {
+    0%, 100% {
+      box-shadow: 0 0 6px 0px var(--glow-color), 0 0 0px 0px var(--glow-color);
+    }
+    50% {
+      box-shadow: 0 0 26px 6px var(--glow-color), 0 0 12px 3px var(--glow-color);
+    }
+  }
+  .staff-favorite-glow {
+    animation: pulseGlow 1.8s ease-in-out infinite;
+  }
+`}</style>
       {/* Background Ambience */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(245,158,11,0.06),transparent_70%)] pointer-events-none" />
 
@@ -286,22 +368,32 @@ const playRevealSound = () => {
             </button>
           ))}
         </div>
+        <div className="mt-3 flex justify-end w-full max-w-3xl">
+      <button
+        onClick={() => setShowAllModal(true)}
+        disabled={availableCafes.length === 0}
+        className="text-[10px] font-mono uppercase tracking-wider text-neutral-500 hover:text-amber-400 transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+      >
+        View all ({availableCafes.length}) →
+      </button>
+    </div>
 
         {/* Horizontal Spinning Reel */}
         <div className="relative w-full max-w-3xl overflow-hidden rounded-xl border-2 border-neutral-800 bg-[#12151b] shadow-[inset_0_0_60px_rgba(0,0,0,0.9)] py-6">
           {/* Top & Bottom Selection Indicators */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[9px] border-l-transparent border-r-[9px] border-r-transparent border-t-[14px] border-t-amber-400 z-30 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]" />
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[9px] border-l-transparent border-r-[9px] border-r-transparent border-b-[14px] border-b-amber-400 z-30 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]" />
-
+          
           {/* Center Indicator Line */}
           <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[2px] bg-amber-400 z-20 shadow-[0_0_12px_#fbbf24] opacity-90" />
-
+          
           {/* Horizontal Vignette Fade */}
           <div className="absolute inset-y-0 left-0 w-28 bg-gradient-to-r from-[#12151b] via-[#12151b]/80 to-transparent z-10 pointer-events-none" />
           <div className="absolute inset-y-0 right-0 w-28 bg-gradient-to-l from-[#12151b] via-[#12151b]/80 to-transparent z-10 pointer-events-none" />
-
+            
           {/* Horizontal Track */}
           <div className="h-[210px] flex items-center relative">
+            
             <div
               className="flex items-center absolute"
               style={{
@@ -313,12 +405,20 @@ const playRevealSound = () => {
                 willChange: "transform",
               }}
             >
-              {reelItems.map((cafe) => (
-                <div
-                  key={cafe.instanceId}
-                  style={{ width: `${CARD_WIDTH}px` }}
-                  className={`h-[185px] shrink-0 bg-gradient-to-b ${cafe.reelAccent.bg} bg-neutral-900/90 rounded-md border-b-4 ${cafe.reelAccent.border} border-t border-x border-neutral-800/80 p-3 flex flex-col justify-between relative shadow-lg group`}
-                >
+              
+           {reelItems.map((cafe) => {
+            const isStaffFav = cafe.reelAccent.name === "Staff Favorite";
+            return (
+              <div
+                key={cafe.instanceId}
+                style={{
+                  width: `${CARD_WIDTH}px`,
+                  ...(isStaffFav ? { "--glow-color": cafe.reelAccent.color } : {}),
+                }}
+                className={`h-[185px] shrink-0 bg-gradient-to-b ${cafe.reelAccent.bg} bg-neutral-900/90 rounded-md border-b-4 ${cafe.reelAccent.border} border-t border-x border-neutral-800/80 p-3 flex flex-col justify-between relative shadow-lg group ${
+                  isStaffFav ? "staff-favorite-glow" : ""
+                }`}
+              >
                   <div className="flex justify-between items-start">
                     <span className="text-[10px] font-mono text-neutral-400 uppercase">
                       {cafe.branch_location}
@@ -332,11 +432,13 @@ const playRevealSound = () => {
                   </div>
 
                   <div className="flex flex-col items-center my-auto">
-                    <img
-                      src={cafe.logo_url}
-                      alt={cafe.name}
-                      className="w-16 h-16 rounded-lg object-cover border border-neutral-700/60 shadow-md"
-                    />
+                   <Image
+                    src={cafe.logo_url}
+                    alt={cafe.name}
+                    width={64}
+                    height={64}
+                    className="w-16 h-16 rounded-lg object-cover border border-neutral-700/60 shadow-md"
+                  />
                   </div>
 
                   <div className="text-center">
@@ -348,7 +450,7 @@ const playRevealSound = () => {
                     </p>
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
           </div>
         </div>
@@ -375,8 +477,63 @@ const playRevealSound = () => {
               </button>
             </div>
           )}
+          {rollHistory.length > 0 && (
+  <div className="mt-6 w-full max-w-sm">
+    <div className="flex items-center justify-between mb-2">
+      <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-500">
+        Recent Spins
+      </span>
+      <button
+        onClick={clearHistory}
+        className="text-[10px] text-neutral-500 hover:text-amber-400 underline cursor-pointer"
+      >
+        Clear
+      </button>
+    </div>
+
+    <div className="flex flex-col gap-1.5 max-h-56 overflow-y-auto pr-1">
+      {rollHistory.map((entry, idx) => (
+        <div
+          key={`${entry.id}-${entry.timestamp}-${idx}`}
+          className="flex items-center gap-2 px-2.5 py-1.5 rounded bg-neutral-900/60 border border-neutral-800/70 text-xs"
+        >
+          <Image
+            src={entry.logo_url}
+            alt={entry.name}
+            width={64}
+            height={64}
+            className="w-10 h-10  rounded-lg object-cover border border-neutral-700/60 shadow-md"
+          />
+
+          <span className="truncate text-neutral-200 flex-1">{entry.name}</span>
+          <span
+            className="text-[9px] font-mono uppercase px-1 rounded"
+            style={{ color: entry.accentColor }}
+          >
+            {entry.branch_location}
+          </span>
+          <span className="text-[9px] font-mono text-neutral-600 shrink-0">
+            {new Date(entry.timestamp).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </span>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
         </div>
       </div>
+
+      <ViewAllModal
+  isOpen={showAllModal}
+  onClose={() => setShowAllModal(false)}
+  cafes={availableCafes}
+  accentMap={ACCENT_MAP}
+  defaultAccent={DEFAULT_ACCENT}
+  selectedBranch={selectedBranch}
+/>
 
     {/* Selected Cafe Modal */}
 {activeModalItem && (
@@ -399,11 +556,14 @@ const playRevealSound = () => {
 
       {/* Cafe Identity */}
       <div className="flex items-center gap-4">
-        <img
+        <Image
           src={activeModalItem.logo_url}
           alt={activeModalItem.name}
-          className="w-16 h-16 rounded-xl object-cover border border-neutral-700 shadow-md shrink-0"
-        />
+          width={64}
+          height={64}
+          className="w-16 h-16 rounded-lg object-cover border border-neutral-700/60 shadow-md"
+/>
+       
         <div className="min-w-0 flex-1">
           <span
             className="text-[10px] font-mono uppercase font-bold tracking-widest"
@@ -420,12 +580,12 @@ const playRevealSound = () => {
         </div>
       </div>
 
-      <p className="mt-4 text-xs text-neutral-400 leading-relaxed">
-        {activeModalItem.description}
-      </p>
+          {/* <p className="mt-4 text-xs text-neutral-400 leading-relaxed">
+            {activeModalItem.description}
+          </p> */}
 
       {/* Reviews Section */}
-      {(() => {
+      {/* {(() => {
         const cafeReviews = REVIEWS.filter(
           (r) => Number(r.cafeId) === Number(activeModalItem.id)
         );
@@ -481,7 +641,7 @@ const playRevealSound = () => {
             )}
           </div>
         );
-      })()}
+      })()} */}
 
       {/* Action Buttons */}
       <div className="mt-5 flex flex-col gap-2">
@@ -525,26 +685,98 @@ const playRevealSound = () => {
       </span>
     </div>
 
-    <a
-      href={suggestedSponsor.map}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="flex items-center justify-between p-2 rounded-lg border border-neutral-900 bg-neutral-900/50 hover:bg-neutral-900 transition-all group"
-    >
-      <div className="flex items-center gap-3 min-w-0">
-        <img
+{/* Sponsor Info Modal */}
+{showPartnerInfo && suggestedSponsor && (
+  <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="relative w-full max-w-sm bg-neutral-950 border border-neutral-800 rounded-xl p-6 shadow-2xl animate-in zoom-in-95 duration-150">
+
+      <div className="h-1.5 w-full rounded-t -mt-6 -mx-6 mb-6 bg-amber-400" />
+
+      {/* Back Button */}
+      <button
+        onClick={() => setShowPartnerInfo(false)}
+        className="absolute top-4 left-4 flex items-center gap-1 text-neutral-400 hover:text-white text-xs font-semibold cursor-pointer"
+        aria-label="Back"
+      >
+        <span>←</span>
+        <span>Back</span>
+      </button>
+
+      {/* Close Button */}
+      <button
+        onClick={closeAllModals}
+        className="absolute top-4 right-4 text-neutral-400 hover:text-white text-sm cursor-pointer"
+        aria-label="Close"
+      >
+        ✕
+      </button>
+
+      <div className="flex items-center gap-4 mt-4">
+        <Image
           src={suggestedSponsor.logo_url}
           alt={suggestedSponsor.name}
-          className="w-8 h-8 rounded object-cover border border-neutral-800"
+          width={64}
+          height={64}
+          className="w-16 h-16 rounded-lg object-cover border border-neutral-700/60 shadow-md"
         />
-        <div className="min-w-0">
-          <h4 className="text-xs font-medium text-neutral-200 truncate group-hover:text-white">
+        
+
+        <div className="min-w-0 flex-1">
+          <span className="text-[10px] font-mono uppercase font-bold tracking-widest text-amber-400">
+            Partner
+          </span>
+          <h2 className="text-lg font-extrabold text-white truncate">
             {suggestedSponsor.name}
-          </h4>
+          </h2>
+          <span className="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-mono bg-neutral-900 border border-neutral-800 text-neutral-300">
+            {suggestedSponsor.branch_location}
+          </span>
         </div>
       </div>
-      <span className="text-neutral-500 group-hover:text-white text-xs pl-2">↗</span>
-    </a>
+{/* 
+      {suggestedSponsor.description && (
+        <p className="mt-4 text-xs text-neutral-400 leading-relaxed">
+          {suggestedSponsor.description}
+        </p>
+      )} */}
+
+      <a
+        href={suggestedSponsor.map}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mt-5 w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold transition-colors"
+      >
+        <span>View on Google Maps ↗</span>
+      </a>
+    </div>
+  </div>
+)}
+
+
+
+
+   <button
+  onClick={() => setShowPartnerInfo(true)}
+  className="w-full flex items-center justify-between p-2 rounded-lg border border-neutral-900 bg-neutral-900/50 hover:bg-neutral-900 transition-all group cursor-pointer"
+>
+  <div className="flex items-center gap-3 min-w-0">
+    <Image
+      src={suggestedSponsor.logo_url}
+      alt={suggestedSponsor.name}
+      width={64}
+      height={64}
+      className="w-8 h-8 rounded-lg object-cover border border-neutral-700/60 shadow-md"
+    />
+  
+    <div className="min-w-0">
+      <h4 className="text-xs font-medium text-neutral-200 truncate group-hover:text-white">
+        {suggestedSponsor.name}
+      </h4>
+    </div>
+  </div>
+  <span className="text-neutral-500 group-hover:text-white text-xs pl-2">→</span>
+</button>
+
 
     {/* Subtle Footnote Link */}
    <div className="mt-2 text-right">
