@@ -47,6 +47,7 @@ export default function Home() {
     }
   });
   const [showAllModal, setShowAllModal] = useState(false);
+  
 
   const HISTORY_KEY = "cafeRollHistory";
   const MAX_HISTORY = 20;
@@ -125,6 +126,7 @@ const addToHistory = useCallback((cafe) => {
     timestamp: Date.now(),
   };
 
+  // Update local state + local cache first (optimistic, instant UI)
   setRollHistory((prev) => {
     const updated = [entry, ...prev].slice(0, MAX_HISTORY);
     try {
@@ -134,7 +136,37 @@ const addToHistory = useCallback((cafe) => {
     }
     return updated;
   });
+
+  // Get userId from localStorage and send to backend
+  let userId = null;
+  try {
+    userId = localStorage.getItem("userId");
+  } catch {
+    // localStorage blocked (e.g. private browsing) — skip backend sync
+  }
+
+  if (!userId) {
+    console.warn("No userId found in localStorage — skipping history sync");
+    return;
+  }
+  // console.log("Sending request to", `${process.env.NEXT_PUBLIC_BACKEND}/api/eatdoko/history/add`)
+  fetch(`${process.env.NEXT_PUBLIC_BACKEND}/api/eatdoko/history/add`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      userId,
+      id: entry.id,
+      name: entry.name,
+      branch_location: entry.branch_location,
+      logo_url: entry.logo_url,
+      accentColor: entry.accentColor,
+    }),
+  }).catch((err) => {
+    // fail silently for UX — history sync isn't critical path
+    console.error("Failed to sync history to backend:", err);
+  });
 }, []);
+ 
 
 const clearHistory = () => {
   setRollHistory([]);
