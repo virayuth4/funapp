@@ -1,11 +1,10 @@
 "use client";
-
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
 const MAX_IMAGES = 10;
 
-export default function AddEstablishmentPage() {
+function AddEstablishmentForm() {
   const searchParams = useSearchParams();
   const isEditMode = searchParams.get("edit") === "true";
   const establishmentId = searchParams.get("id");
@@ -778,5 +777,13 @@ export default function AddEstablishmentPage() {
         </form>
       </div>
     </main>
+  );
+}
+
+export default function AddEstablishmentPage() {
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-slate-50 py-12 px-4"><div className="mx-auto max-w-xl text-sm text-slate-500">Loading…</div></main>}>
+      <AddEstablishmentForm />
+    </Suspense>
   );
 }

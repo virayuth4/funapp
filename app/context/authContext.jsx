@@ -7,6 +7,22 @@ const AuthContext = createContext(null);
 const USER_ID_KEY = "userId";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 year
 
+function generateUUID() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  // Fallback when not running in a secure HTTPS context
+  return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (c) =>
+    (
+      +c ^
+      (typeof crypto !== "undefined" && crypto.getRandomValues
+        ? crypto.getRandomValues(new Uint8Array(1))[0]
+        : Math.floor(Math.random() * 256)) &
+        (15 >> (+c / 4))
+    ).toString(16)
+  );
+}
+
 function getCookie(name) {
   if (typeof document === "undefined") return null;
   const match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
@@ -21,7 +37,7 @@ function setCookie(name, value, maxAge) {
 function getOrSetUserId() {
   let id = localStorage.getItem(USER_ID_KEY) || getCookie(USER_ID_KEY);
   if (!id) {
-    id = crypto.randomUUID();
+    id = generateUUID();
   }
   localStorage.setItem(USER_ID_KEY, id);
   setCookie(USER_ID_KEY, id, COOKIE_MAX_AGE);

@@ -7,7 +7,9 @@ const nextConfig = {
         hostname: "d2l8z96ad5k9a0.cloudfront.net",
          pathname: "/**",
       },
+      
     ],
+    minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
   },
   allowedDevOrigins: [
     "localhost:3000",
@@ -16,19 +18,7 @@ const nextConfig = {
     "192.168.18.6:3000",
     "192.168.18.6",
   ],
-  async headers() {
-    return [
-      {
-        source: "/logos/:path*",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=31536000, immutable",
-          },
-        ],
-      },
-    ];
-  },
+ 
 };
 
 export default nextConfig;
