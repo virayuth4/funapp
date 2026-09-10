@@ -9,7 +9,7 @@ export const CAFES = [
     logo_url: "/logos/brown-logo.jpg",
     map: "https://www.google.com/maps/place/BROWN+Roastery+%7C+BKK/@11.5532865,104.9222608,17z/data=!3m1!4b1!4m6!3m5!1s0x310951252586ffa1:0x4052be2c82c7a733!8m2!3d11.5532865!4d104.9248357!16s%2Fg%2F11xf48rnf?entry=ttu&g_ep=EgoyMDI2MDkwMi4wIKXMDSoASAFQAw%3D%3D",
     accent: "Popular",
-    is_sponsored: false,
+    is_sponsored: false,    
     in_roll: true
   },
   {

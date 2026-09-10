@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Shuffle, Utensils } from "lucide-react";
+import { Coffee, Dice1Icon, Shuffle, Utensils } from "lucide-react";
 
 export default function Navigation() {
   return (
@@ -23,17 +23,29 @@ export default function Navigation() {
             href="/"
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-neutral-300 hover:text-white hover:bg-neutral-800 transition-colors"
           >
-            <Utensils size={14} />
+            <Dice1Icon size={14} />
             <span>Random Pick</span>
           </Link>
-
-          <Link
-            href="/happy-potato"
+        
+        <Link
+            href="/cafe"
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-neutral-300 hover:text-white hover:bg-neutral-800 transition-colors"
           >
-            <span>🥔</span>
-            <span>Happy Potato</span>
+            <Coffee size={14} />
+            <span>Cafe</span>
           </Link>
+
+            <Link
+            href="/restaurants"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-neutral-300 hover:text-white hover:bg-neutral-800 transition-colors"
+          >
+            <Utensils size={14} />
+            <span>Restaurants</span>
+          </Link>
+          
+          
+
+        
         </div>
       </div>
     </nav>
