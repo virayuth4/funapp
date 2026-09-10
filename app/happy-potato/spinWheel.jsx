@@ -48,14 +48,7 @@ const PRIZES = [
     textColor: BRAND.cream,
     image: "/logos/happy-potato/regular-fries.jpg",
   },
-  {
-    id: "voucher",
-    label: "Nugget Voucher",
-    color: BRAND.yellow,
-    textColor: BRAND.navy,
-    image:
-      "/logos/happy-potato/jumbo-nugget.jpg",
-  },
+ 
   {
     id: "ticket",
     label: "Buy 1 Chicken Nugget Get 1 Chicken Nugget",
@@ -67,7 +60,7 @@ const PRIZES = [
     label: "20% Discount", 
     color: BRAND.red, 
     textColor: BRAND.cream ,
-    image: "/logos/happy-potato/save.jpg",
+    image: "/logos/happy-potato/save  .jpg",
   },
 ];
 
@@ -170,7 +163,7 @@ export default function SpinWheel() {
           alt="Happy Potato"
           className="h-24 w-auto"
         />
-        <h1
+        {/* <h1
           className="text-5xl italic tracking-tight sm:text-6xl"
           style={{
             color: BRAND.red,
@@ -185,7 +178,7 @@ export default function SpinWheel() {
           style={{ color: BRAND.navy }}
         >
           Happy Together
-        </p>
+        </p> */}
         <p
           className="mt-2 text-sm font-bold uppercase tracking-widest"
           style={{ color: BRAND.red }}
