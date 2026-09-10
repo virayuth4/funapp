@@ -68,7 +68,7 @@ export const CAFES = [
     description: "Traditional Khmer architectural accents combined with modern espresso and freshly baked croissants.",
     logo_url: "/logos/temple-logo.png",
     map: "https://maps.app.goo.gl/QshJ7S5puxGyVeL37",
-    accent: "Trending",
+    accent: "Popular",
     is_sponsored: false,
     in_roll: true
   },
@@ -239,5 +239,90 @@ export const CAFES = [
     accent: "Staff Favorite",
     is_sponsored: false,
     in_roll: true
+  },
+    {
+    id: 21,
+    name: "Moma Bakehouse & Bistro BKK",
+    category: "cafe",
+    branch_location: "BKK",
+    description: "Traditional Khmer architectural accents combined with modern espresso and freshly baked croissants.",
+    logo_url: "/logos/moma-logo.jpg",
+    map: "https://maps.app.goo.gl/AtV3shHyCsGYHqBCA",
+    accent: "Popular",
+    is_sponsored: false,
+    in_roll: true
+  },
+   {
+    id: 22,
+    name: "Moma Bakehouse & Bistro IFL",
+    category: "cafe",
+    branch_location: "IFL",
+    description: "Traditional Khmer architectural accents combined with modern espresso and freshly baked croissants.",
+    logo_url: "/logos/moma-logo.jpg",
+    map: "https://maps.app.goo.gl/kgVqncoP3eTP1ajTA",
+    accent: "Popular",
+    is_sponsored: false,
+    in_roll: true
+  },
+  {
+    id: 23,
+    name: "Brown Coffee IFL",
+    category: "cafe",
+    branch_location: "IFL",
+    description: "Traditional Khmer architectural accents combined with modern espresso and freshly baked croissants.",
+    logo_url: "/logos/brown-logo.jpg",
+    map: "https://maps.app.goo.gl/YRjfn7uFQwy9JwtTA",
+    accent: "Popular",
+    is_sponsored: true,
+    in_roll: true
+  },
+   {
+    id: 24,
+    name: "Starbucks | TK Royal One",
+    category: "cafe",
+    branch_location: "IFL",
+    description: "Traditional Khmer architectural accents combined with modern espresso and freshly baked croissants.",
+    logo_url: "/logos/starbucks-logo.jpg",
+    map: "https://maps.app.goo.gl/2N82Hk3A9YMGcStk8",
+    accent: "Featured",
+    is_sponsored: true,
+    in_roll: true
+  },
+   {
+    id: 25,
+    name: "Toto by Chichi | IFL",
+    category: "cafe",
+    branch_location: "IFL",
+    description: "Traditional Khmer architectural accents combined with modern espresso and freshly baked croissants.",
+    logo_url: "/logos/toto-by-chichi-logo.jpg",
+    map: "https://maps.app.goo.gl/Np1kWavtDfcidQCD6",
+    accent: "Featured",
+    is_sponsored: true,
+    in_roll: true
+  },
+   {
+    id: 26,
+    name: "Toto by Chichi | BKK",
+    category: "cafe",
+    branch_location: "BKK ",
+    description: "Traditional Khmer architectural accents combined with modern espresso and freshly baked croissants.",
+    logo_url: "/logos/toto-by-chichi-logo.jpg",
+    map: "https://maps.app.goo.gl/adT1zwrVeLaDGdhk9",
+    accent: "Featured",
+    is_sponsored: true,
+    in_roll: true
+  },
+    {
+    id: 27,
+    name: "Ono Cafe | BKK",
+    category: "cafe",
+    branch_location: "BKK",
+    description: "Traditional Khmer architectural accents combined with modern espresso and freshly baked croissants.",
+    logo_url: "/logos/ono-cafe-logo.jpg",
+    map: "https://maps.app.goo.gl/7uK5eLnLmEhHixJi7",
+    accent: "Popular",
+    is_sponsored: false,
+    in_roll: true,
+  
   }
 ];

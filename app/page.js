@@ -7,6 +7,7 @@ import { REVIEWS } from "@/app/data/reviews";
 import Link from "next/link";
 import Image from "next/image";
 import ViewAllModal from "./Components/viewAllModal";
+import CafeDetailModal from "./Components/cafeDetailsModal";
 
 // Clean color accents for card styling
 const CARD_ACCENTS = [
@@ -37,15 +38,15 @@ export default function Home() {
   const [reelItems, setReelItems] = useState([]);
   const [translateX, setTranslateX] = useState(0);
   const [transitionStyle, setTransitionStyle] = useState("none");
-  const [rollHistory, setRollHistory] = useState(() => {
-    if (typeof window === "undefined") return [];
-    try {
-      const stored = localStorage.getItem("cafeRollHistory");
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  });
+    const [rollHistory, setRollHistory] = useState(() => {
+      if (typeof window === "undefined") return [];
+      try {
+        const stored = localStorage.getItem("cafeRollHistory");
+        return stored ? JSON.parse(stored) : [];
+      } catch {
+        return [];
+      }
+    });
   const [showAllModal, setShowAllModal] = useState(false);
   
 
@@ -54,7 +55,7 @@ export default function Home() {
 
   const lastTickIndexRef = useRef(-1);
   const animationFrameRef = useRef(null);
-  const branches = ["ALL", "BKK", "TTP", "TK"];
+  const branches = ["ALL", "BKK", "TTP", "TK", "IFL"];
   
 
 const openCafeModal = (cafe) => {
@@ -353,6 +354,17 @@ const playRevealSound = () => {
     setSuggestedSponsor(null);
   };
 
+  const openHistoryEntry = (entry) => {
+  const fullCafe = CAFES.find((c) => c.id === entry.id);
+  if (!fullCafe) return;
+
+  setSuggestedSponsor(null); // no sponsor context for a re-opened history item
+  setActiveModalItem({
+    ...fullCafe,
+    reelAccent: ACCENT_MAP[fullCafe.accent] || DEFAULT_ACCENT,
+  });
+};
+
   return (
     <main className="min-h-screen bg-[#0d0f12] text-neutral-100 flex flex-col  items-center px-4 py-8 relative overflow-hidden select-none">
     <style jsx global>{`
@@ -489,13 +501,16 @@ const playRevealSound = () => {
 
         {/* Action Controls */}
         <div className="mt-8 flex flex-col items-center gap-3">
-          <button
-            onClick={startSpin}
-            disabled={isSpinning || availableCafes.length === 0}
-            className="px-10 py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 active:scale-95 text-black font-extrabold rounded shadow-[0_0_25px_rgba(245,158,11,0.25)] transition-all uppercase tracking-widest text-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer border border-amber-300/30"
-          >
-            {isSpinning ? "Selecting Cafe..." : "Spin"}
-          </button>
+       <button
+      onClick={startSpin}
+      disabled={isSpinning || availableCafes.length === 0}
+      className="relative px-10 py-3.5 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 bg-[length:200%_200%] hover:from-amber-300 hover:via-amber-400 hover:to-amber-500 active:scale-95 text-black font-extrabold rounded shadow-[0_0_25px_rgba(245,158,11,0.25)] transition-all uppercase tracking-widest text-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:animate-none cursor-pointer border border-amber-300/40 animate-gradient-x animate-pulse-glow overflow-hidden"
+    >
+      <span className="relative z-10">
+        {isSpinning ? "Selecting Cafe..." : "Spin"}
+      </span>
+      <span className="absolute inset-0 -translate-x-full hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-12" />
+    </button>
 
           {removedIds.length > 0 && (
             <div className="flex items-center gap-2 text-xs text-neutral-500">
@@ -524,34 +539,34 @@ const playRevealSound = () => {
     </div>
 
     <div className="flex flex-col gap-1.5 max-h-56 overflow-y-auto pr-1">
-      {rollHistory.map((entry, idx) => (
-        <div
-          key={`${entry.id}-${entry.timestamp}-${idx}`}
-          className="flex items-center gap-2 px-2.5 py-1.5 rounded bg-neutral-900/60 border border-neutral-800/70 text-xs"
-        >
-          <Image
-            src={entry.logo_url}
-            alt={entry.name}
-            width={64}
-            height={64}
-            className="w-10 h-10  rounded-lg object-cover border border-neutral-700/60 shadow-md"
-          />
-
-          <span className="truncate text-neutral-200 flex-1">{entry.name}</span>
-          <span
-            className="text-[9px] font-mono uppercase px-1 rounded"
-            style={{ color: entry.accentColor }}
-          >
-            {entry.branch_location}
-          </span>
-          <span className="text-[9px] font-mono text-neutral-600 shrink-0">
-            {new Date(entry.timestamp).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </span>
-        </div>
-      ))}
+     {rollHistory.map((entry, idx) => (
+  <button
+    key={`${entry.id}-${entry.timestamp}-${idx}`}
+    onClick={() => openHistoryEntry(entry)}
+    className="flex items-center gap-2 px-2.5 py-1.5 rounded bg-neutral-900/60 border border-neutral-800/70 text-xs w-full text-left hover:bg-neutral-900 hover:border-neutral-700 transition-colors cursor-pointer"
+  >
+    <Image
+      src={entry.logo_url}
+      alt={entry.name}
+      width={64}
+      height={64}
+      className="w-10 h-10 rounded-lg object-cover border border-neutral-700/60 shadow-md"
+    />
+    <span className="truncate text-neutral-200 flex-1">{entry.name}</span>
+    <span
+      className="text-[9px] font-mono uppercase px-1 rounded"
+      style={{ color: entry.accentColor }}
+    >
+      {entry.branch_location}
+    </span>
+    <span className="text-[9px] font-mono text-neutral-600 shrink-0">
+      {new Date(entry.timestamp).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      })}
+    </span>
+  </button>
+))}
     </div>
   </div>
 )}
@@ -568,263 +583,74 @@ const playRevealSound = () => {
 />
 
     {/* Selected Cafe Modal */}
-{activeModalItem && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-    <div className="relative w-full max-w-sm max-h-[90vh] overflow-y-auto bg-neutral-950 border border-neutral-800 rounded-xl p-6 shadow-2xl animate-in zoom-in-95 duration-150">
-      
-      {/* Accent Top Strip */}
-      <div
-        className="h-1.5 w-full rounded-t -mt-6 -mx-6 mb-6"
-        style={{ backgroundColor: activeModalItem.reelAccent.color }}
-      />
-
-      <button
-        onClick={() => setActiveModalItem(null)}
-        className="absolute top-4 right-4 text-neutral-400 hover:text-white text-sm cursor-pointer"
-        aria-label="Close"
-      >
-        ✕
-      </button>
-
-      {/* Cafe Identity */}
-      <div className="flex items-center gap-4">
-        <Image
-          src={activeModalItem.logo_url}
-          alt={activeModalItem.name}
-          width={64}
-          height={64}
-          className="w-16 h-16 rounded-lg object-cover border border-neutral-700/60 shadow-md"
-/>
-       
-        <div className="min-w-0 flex-1">
-          <span
-            className="text-[10px] font-mono uppercase font-bold tracking-widest"
-            style={{ color: activeModalItem.reelAccent.color }}
-          >
-            Selected Cafe
+    <CafeDetailModal
+  isOpen={!!activeModalItem}
+  onClose={closeCafeModal}
+  cafe={activeModalItem}
+  variant="cafe"
+  accentColor={activeModalItem?.reelAccent?.color}
+  onExclude={() => activeModalItem && handleRemoveCafe(activeModalItem.id)}
+  onSpinAgain={() => {
+    setActiveModalItem(null);
+    startSpin();
+  }}
+  footer={
+    suggestedSponsor && (
+      <div className="mt-5 pt-4 border-t border-neutral-900">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[10px] font-mono tracking-wider uppercase text-neutral-400">
+            Nearby In {suggestedSponsor.branch_location}
           </span>
-          <h2 className="text-lg font-extrabold text-white truncate">
-            {activeModalItem.name}
-          </h2>
-          <span className="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-mono bg-neutral-900 border border-neutral-800 text-neutral-300">
-            {activeModalItem.branch_location}
-          </span>
-        </div>
-      </div>
-
-          {/* <p className="mt-4 text-xs text-neutral-400 leading-relaxed">
-            {activeModalItem.description}
-          </p> */}
-
-      {/* Reviews Section */}
-      {/* {(() => {
-        const cafeReviews = REVIEWS.filter(
-          (r) => Number(r.cafeId) === Number(activeModalItem.id)
-        );
-        const avgRating = cafeReviews.length
-          ? (cafeReviews.reduce((acc, r) => acc + r.rating, 0) / cafeReviews.length).toFixed(1)
-          : null;
-
-        return (
-          <div className="mt-4 pt-3 border-t border-neutral-900">
-            <button
-              onClick={() => setShowReviews((prev) => !prev)}
-              className="w-full flex items-center justify-between py-1.5 text-xs text-neutral-300 hover:text-white transition-colors cursor-pointer"
-            >
-              <div className="flex items-center gap-2 font-semibold">
-                <span>Reviews ({cafeReviews.length})</span>
-                {avgRating && (
-                  <span className="text-amber-400 font-mono text-[11px]">
-                    ★ {avgRating}
-                  </span>
-                )}
-              </div>
-              <span className="text-[10px] text-neutral-500 font-mono">
-                {showReviews ? "Hide ▲" : "Read ▼"}
-              </span>
-            </button>
-
-            {showReviews && (
-              <div className="mt-2.5 flex flex-col gap-2 max-h-48 overflow-y-auto pr-1">
-                {cafeReviews.length > 0 ? (
-                  cafeReviews.map((rev) => (
-                    <div
-                      key={rev.id}
-                      className="p-2.5 rounded-lg bg-neutral-900/60 border border-neutral-800/80 text-[11px]"
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-semibold text-neutral-200">{rev.author}</span>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-amber-400 text-[10px]">
-                            {"★".repeat(rev.rating)}
-                          </span>
-                          <span className="text-neutral-500 text-[9px] font-mono">{rev.date}</span>
-                        </div>
-                      </div>
-                      <p className="text-neutral-400 leading-snug">{rev.comment}</p>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-[11px] text-neutral-500 py-1 italic">
-                    No reviews yet for this cafe.
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-        );
-      })()} */}
-
-      {/* Action Buttons */}
-      <div className="mt-5 flex flex-col gap-2">
-        <a
-          href={activeModalItem.map}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-neutral-200 text-xs font-semibold transition-colors"
-        >
-          <span>View on Google Maps ↗</span>
-        </a>
-
-        <div className="flex gap-2">
-          <button
-            onClick={() => handleRemoveCafe(activeModalItem.id)}
-            className="flex-1 py-2 rounded bg-red-950/40 border border-red-900 hover:bg-red-900/60 text-red-300 text-xs font-semibold transition-colors cursor-pointer"
-          >
-            Exclude Cafe
-          </button>
-          <button
-            onClick={() => {
-              setActiveModalItem(null);
-              startSpin();
-            }}
-            className="flex-1 py-2 rounded bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold transition-colors cursor-pointer"
-          >
-            Spin Again
-          </button>
-        </div>
-      </div>
-
-    {/* Sponsored Suggestion */}
-{suggestedSponsor && (
-  <div className="mt-5 pt-4 border-t border-neutral-900">
-    <div className="flex items-center justify-between mb-2">
-      <span className="text-[10px] font-mono tracking-wider uppercase text-neutral-400">
-        Nearby In {suggestedSponsor.branch_location}
-      </span>
-      <span className="text-[9px] font-mono tracking-widest uppercase text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded">
-        Partner
-      </span>
-    </div>
-
-{/* Sponsor Info Modal */}
-{showPartnerInfo && suggestedSponsor && (
-  <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-    <div className="relative w-full max-w-sm bg-neutral-950 border border-neutral-800 rounded-xl p-6 shadow-2xl animate-in zoom-in-95 duration-150">
-
-      <div className="h-1.5 w-full rounded-t -mt-6 -mx-6 mb-6 bg-amber-400" />
-
-      {/* Back Button */}
-      <button
-        onClick={() => setShowPartnerInfo(false)}
-        className="absolute top-4 left-4 flex items-center gap-1 text-neutral-400 hover:text-white text-xs font-semibold cursor-pointer"
-        aria-label="Back"
-      >
-        <span>←</span>
-        <span>Back</span>
-      </button>
-
-      {/* Close Button */}
-      <button
-        onClick={closeAllModals}
-        className="absolute top-4 right-4 text-neutral-400 hover:text-white text-sm cursor-pointer"
-        aria-label="Close"
-      >
-        ✕
-      </button>
-
-      <div className="flex items-center gap-4 mt-4">
-        <Image
-          src={suggestedSponsor.logo_url}
-          alt={suggestedSponsor.name}
-          width={64}
-          height={64}
-          className="w-16 h-16 rounded-lg object-cover border border-neutral-700/60 shadow-md"
-        />
-        
-
-        <div className="min-w-0 flex-1">
-          <span className="text-[10px] font-mono uppercase font-bold tracking-widest text-amber-400">
+          <span className="text-[9px] font-mono tracking-widest uppercase text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded">
             Partner
           </span>
-          <h2 className="text-lg font-extrabold text-white truncate">
-            {suggestedSponsor.name}
-          </h2>
-          <span className="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-mono bg-neutral-900 border border-neutral-800 text-neutral-300">
-            {suggestedSponsor.branch_location}
-          </span>
+        </div>
+
+        <button
+          onClick={() => setShowPartnerInfo(true)}
+          className="w-full flex items-center justify-between p-2 rounded-lg border border-neutral-900 bg-neutral-900/50 hover:bg-neutral-900 transition-all group cursor-pointer"
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <Image
+              src={suggestedSponsor.logo_url}
+              alt={suggestedSponsor.name}
+              width={64}
+              height={64}
+              className="w-8 h-8 rounded-lg object-cover border border-neutral-700/60 shadow-md"
+            />
+            <div className="min-w-0">
+              <h4 className="text-xs font-medium text-neutral-200 truncate group-hover:text-white">
+                {suggestedSponsor.name}
+              </h4>
+            </div>
+          </div>
+          <span className="text-neutral-500 group-hover:text-white text-xs pl-2">→</span>
+        </button>
+
+        <div className="mt-2 text-right">
+          <Link
+            href="/partner"
+            className="text-[9px] font-mono text-neutral-600 hover:text-neutral-400 transition-colors inline-flex items-center gap-1"
+          >
+            <span>Become a partner & feature your cafe</span>
+            <span>→</span>
+          </Link>
         </div>
       </div>
-{/* 
-      {suggestedSponsor.description && (
-        <p className="mt-4 text-xs text-neutral-400 leading-relaxed">
-          {suggestedSponsor.description}
-        </p>
-      )} */}
+    )
+  }
+/>
 
-      <a
-        href={suggestedSponsor.map}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="mt-5 w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold transition-colors"
-      >
-        <span>View on Google Maps ↗</span>
-      </a>
-    </div>
-  </div>
-)}
+<CafeDetailModal
+  isOpen={showPartnerInfo}
+  onClose={closeAllModals}
+  onBack={() => setShowPartnerInfo(false)}
+  cafe={suggestedSponsor}
+  variant="sponsor"
+  accentColor="#fbbf24"
+  zIndex={60}
+/>
 
-
-
-
-   <button
-  onClick={() => setShowPartnerInfo(true)}
-  className="w-full flex items-center justify-between p-2 rounded-lg border border-neutral-900 bg-neutral-900/50 hover:bg-neutral-900 transition-all group cursor-pointer"
->
-  <div className="flex items-center gap-3 min-w-0">
-    <Image
-      src={suggestedSponsor.logo_url}
-      alt={suggestedSponsor.name}
-      width={64}
-      height={64}
-      className="w-8 h-8 rounded-lg object-cover border border-neutral-700/60 shadow-md"
-    />
-  
-    <div className="min-w-0">
-      <h4 className="text-xs font-medium text-neutral-200 truncate group-hover:text-white">
-        {suggestedSponsor.name}
-      </h4>
-    </div>
-  </div>
-  <span className="text-neutral-500 group-hover:text-white text-xs pl-2">→</span>
-</button>
-
-
-    {/* Subtle Footnote Link */}
-   <div className="mt-2 text-right">
-  <Link
-    href="/partner"
-    className="text-[9px] font-mono text-neutral-600 hover:text-neutral-400 transition-colors inline-flex items-center gap-1"
-  >
-    <span>Bcome a partner & feature your cafe</span>
-    <span>→</span>
-  </Link>
-</div>
-  </div>
-)}
-    </div>
-  </div>
-)}
     </main>
   );
 }

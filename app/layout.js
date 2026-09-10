@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "./context/authContext";
+import Navigation from "./Components/navigation";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,7 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "Eat Doko (Where)? | Random Cafe & Restaurant Picker",
   description:
-    "Can't decide where to eat? Pick a Place randomly picks a cafe or restaurant for you, so you can stop scrolling and start eating.",
+    "Can't decide where to eat? Randomly select a cafe or restuarants, so you can stop scrolling and start eating.",
 };
 export default function RootLayout({ children }) {
   return (
@@ -25,6 +26,7 @@ export default function RootLayout({ children }) {
     >
       <body className="min-h-full flex flex-col">
         <AuthProvider>
+          {/* <Navigation/> */}
         {children}
         </AuthProvider>
         </body>
