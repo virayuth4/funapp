@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+
+const STORAGE_KEY = "partner_application";
 
 const TIERS = [
   {
     name: "Community Listing",
+    tierValue: "Free",
     price: "Free",
     period: "forever",
     description: "Standard submission into the random draw rotation pool.",
@@ -23,8 +26,9 @@ const TIERS = [
   },
   {
     name: "Featured Partner",
-    price: "$29",
-    period: "per month",
+    tierValue: "Featured",
+    price: "Contact us",
+    period: "for price",
     description: "Guaranteed draw placement plus direct spotlight recommendations.",
     badge: "Popular",
     border: "border-amber-500/80",
@@ -39,50 +43,98 @@ const TIERS = [
     href: "#apply",
     featured: true,
   },
-  {
-    name: "Branch Takeover",
-    price: "$69",
-    period: "per month",
-    description: "Maximum prominence across an entire district location.",
-    badge: "Limited",
-    border: "border-neutral-700",
-    features: [
-      "Everything in Featured Partner",
-      "Exclusive primary sponsor for 1 district (BKK / TTP / TK)",
-      "Top-tier accent card banner",
-      "Direct link out to custom menu or promo URL",
-      "Bi-weekly performance report",
-    ],
-    cta: "Reserve District",
-    href: "#apply",
-    featured: false,
-  },
 ];
 
 export default function PartnerPage() {
   const [formData, setFormData] = useState({
     cafeName: "",
-    branchLocation: "BKK",
+    branchLocation: "",
     tier: "Free",
     googleMapsUrl: "",
-    contactEmail: "",
+    contactTelegram: "",
     notes: "",
   });
-  const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e) => {
+  const [loading, setLoading] = useState(false);
+  const [submittedData, setSubmittedData] = useState(null);
+  const [error, setError] = useState(null);
+
+  // Restore saved application on load
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        setSubmittedData(JSON.parse(saved));
+      }
+    } catch (err) {
+      console.error("Failed to read submission from localStorage", err);
+    }
+  }, []);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Connect to your API route, Airtable, or Formspree
-    setSubmitted(true);
+    setLoading(true);
+    setError(null);
+
+    const endpoint = `${process.env.NEXT_PUBLIC_BACKEND}/api/eatdoko/establishment/partner/request`;
+
+    const payload = {
+      cafeName: formData.cafeName,
+      location: formData.branchLocation,
+      tier: formData.tier,
+      googleMapsUrl: formData.googleMapsUrl,
+      contactTelegram: formData.contactTelegram,
+      notes: formData.notes,
+    };
+
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to submit request");
+      }
+
+      // Record payload and review status
+      const savedRecord = {
+        ...payload,
+        status: "Pending Review",
+        submittedAt: new Date().toISOString(),
+      };
+
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(savedRecord));
+      setSubmittedData(savedRecord);
+    } catch (err) {
+      console.error(err);
+      setError("Unable to submit application. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClearSubmission = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setSubmittedData(null);
+    setFormData({
+      cafeName: "",
+      branchLocation: "",
+      tier: "Free",
+      googleMapsUrl: "",
+      contactTelegram: "",
+      notes: "",
+    });
   };
 
   return (
     <main className="min-h-screen bg-[#0d0f12] text-neutral-100 flex flex-col items-center px-4 py-12 relative overflow-hidden">
-      {/* Subtle Background Glow */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(245,158,11,0.05),transparent_60%)] pointer-events-none" />
 
       <div className="w-full max-w-4xl relative z-10">
-        {/* Navigation */}
         <div className="mb-8">
           <Link
             href="/"
@@ -92,7 +144,6 @@ export default function PartnerPage() {
           </Link>
         </div>
 
-        {/* Hero Header */}
         <header className="text-center max-w-2xl mx-auto mb-14">
           <span className="text-[10px] font-mono font-bold tracking-widest uppercase text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded">
             For Cafe Owners
@@ -105,8 +156,8 @@ export default function PartnerPage() {
           </p>
         </header>
 
-        {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-16">
+        {/* 2-Tier Pricing Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-16 max-w-3xl mx-auto">
           {TIERS.map((tier) => (
             <div
               key={tier.name}
@@ -144,7 +195,7 @@ export default function PartnerPage() {
 
               <a
                 href={tier.href}
-                onClick={() => setFormData((prev) => ({ ...prev, tier: tier.name }))}
+                onClick={() => setFormData((prev) => ({ ...prev, tier: tier.tierValue }))}
                 className={`mt-8 w-full py-2.5 rounded text-xs font-bold uppercase tracking-wider text-center transition-all ${
                   tier.featured
                     ? "bg-amber-500 hover:bg-amber-400 text-black shadow-lg shadow-amber-500/10"
@@ -157,124 +208,199 @@ export default function PartnerPage() {
           ))}
         </div>
 
-        {/* Application Form */}
+        {/* Application / Status Section */}
         <section
           id="apply"
           className="max-w-lg mx-auto bg-neutral-950 border border-neutral-800/80 rounded-xl p-6 sm:p-8 shadow-2xl relative"
         >
-          <div className="mb-6">
-            <h2 className="text-lg font-bold text-white uppercase tracking-wide">
-              Submit Your Venue
-            </h2>
-            <p className="text-xs text-neutral-400 mt-1">
-              Free listings undergo a quality review before approval. Paid options guarantee immediate placement.
-            </p>
-          </div>
+          {submittedData ? (
+            <div className="space-y-5">
+              <div className="flex items-center justify-between pb-3 border-b border-neutral-900">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
+                  <span className="text-xs font-mono font-bold uppercase tracking-wider text-amber-400">
+                    {submittedData.status || "Pending Review"}
+                  </span>
+                </div>
+                <span className="text-[10px] font-mono text-neutral-500">
+                  {submittedData.submittedAt
+                    ? new Date(submittedData.submittedAt).toLocaleDateString()
+                    : "Recently"}
+                </span>
+              </div>
 
-          {submitted ? (
-            <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20 text-center py-8">
-              <span className="text-2xl mb-2 block">✓</span>
-              <h4 className="text-sm font-bold text-white">Application Received</h4>
-              <p className="text-xs text-neutral-400 mt-1">
-                We will inspect your location and get back to you via email within 48 hours.
-              </p>
+              <div>
+                <h3 className="text-base font-bold text-white mb-1">
+                  {submittedData.cafeName}
+                </h3>
+                <p className="text-xs text-neutral-400">
+                  Your application has been received and logged in your browser. We will reach out on Telegram once reviewed.
+                </p>
+              </div>
+
+              {/* Submitted Details Review Card */}
+              <div className="bg-neutral-900/60 rounded-lg p-3.5 border border-neutral-800/80 space-y-2.5 text-xs font-mono">
+                <div className="flex justify-between items-center text-neutral-400">
+                  <span>Tier</span>
+                  <span className="text-neutral-200 font-semibold">{submittedData.tier}</span>
+                </div>
+                <div className="flex justify-between items-center text-neutral-400">
+                  <span>Location</span>
+                  <span className="text-neutral-200">{submittedData.location}</span>
+                </div>
+                <div className="flex justify-between items-center text-neutral-400">
+                  <span>Telegram</span>
+                  <span className="text-amber-400">{submittedData.contactTelegram}</span>
+                </div>
+                <div className="flex justify-between items-center text-neutral-400">
+                  <span>Maps Link</span>
+                  <a
+                    href={submittedData.googleMapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-neutral-300 underline hover:text-white truncate max-w-[180px]"
+                  >
+                    {submittedData.googleMapsUrl}
+                  </a>
+                </div>
+                {submittedData.notes && (
+                  <div className="pt-2 border-t border-neutral-800/60 text-neutral-400">
+                    <span className="block text-[10px] uppercase text-neutral-500 mb-0.5">Notes</span>
+                    <p className="text-neutral-300 whitespace-pre-wrap font-sans text-xs">
+                      {submittedData.notes}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={handleClearSubmission}
+                  className="w-full py-2 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-400 hover:text-neutral-200 text-xs font-mono rounded transition-colors cursor-pointer"
+                >
+                  Submit Another Venue
+                </button>
+              </div>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-[11px] font-mono uppercase text-neutral-400 mb-1">
-                  Cafe Name
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.cafeName}
-                  onChange={(e) => setFormData({ ...formData, cafeName: e.target.value })}
-                  placeholder="e.g. Kinship Coffee"
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-amber-500"
-                />
+            <>
+              <div className="mb-6">
+                <h2 className="text-lg font-bold text-white uppercase tracking-wide">
+                  Submit Your Venue
+                </h2>
+                <p className="text-xs text-neutral-400 mt-1">
+                  Free listings undergo a quality review before approval. Featured tier guarantees priority processing.
+                </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {error && (
+                  <p className="text-xs text-red-400 bg-red-950/40 border border-red-900/50 p-2.5 rounded">
+                    {error}
+                  </p>
+                )}
+
                 <div>
                   <label className="block text-[11px] font-mono uppercase text-neutral-400 mb-1">
-                    District / Branch
+                    Cafe Name <span className="text-amber-500">*</span>
                   </label>
-                  <select
-                    value={formData.branchLocation}
-                    onChange={(e) => setFormData({ ...formData, branchLocation: e.target.value })}
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
-                  >
-                    <option value="BKK">BKK</option>
-                    <option value="TTP">TTP</option>
-                    <option value="TK">TK</option>
-                  </select>
+                  <input
+                    type="text"
+                    required
+                    disabled={loading}
+                    value={formData.cafeName}
+                    onChange={(e) => setFormData({ ...formData, cafeName: e.target.value })}
+                    placeholder="e.g. Kinship Coffee"
+                    className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-amber-500 disabled:opacity-50"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-mono uppercase text-neutral-400 mb-1">
+                      Location / Area <span className="text-amber-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      disabled={loading}
+                      value={formData.branchLocation}
+                      onChange={(e) => setFormData({ ...formData, branchLocation: e.target.value })}
+                      placeholder="e.g. BKK1, Street 302"
+                      className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-amber-500 disabled:opacity-50"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-mono uppercase text-neutral-400 mb-1">
+                      Preferred Tier <span className="text-amber-500">*</span>
+                    </label>
+                    <select
+                      value={formData.tier}
+                      disabled={loading}
+                      onChange={(e) => setFormData({ ...formData, tier: e.target.value })}
+                      className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500 disabled:opacity-50"
+                    >
+                      <option value="Free">Free (Community Listing)</option>
+                      <option value="Featured">Featured (Contact us for price)</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-[11px] font-mono uppercase text-neutral-400 mb-1">
-                    Preferred Tier
+                    Google Maps URL <span className="text-amber-500">*</span>
                   </label>
-                  <select
-                    value={formData.tier}
-                    onChange={(e) => setFormData({ ...formData, tier: e.target.value })}
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
-                  >
-                    <option value="Community Listing">Community Listing (Free)</option>
-                    <option value="Featured Partner">Featured Partner ($29/mo)</option>
-                    <option value="Branch Takeover">Branch Takeover ($69/mo)</option>
-                  </select>
+                  <input
+                    type="url"
+                    required
+                    disabled={loading}
+                    value={formData.googleMapsUrl}
+                    onChange={(e) => setFormData({ ...formData, googleMapsUrl: e.target.value })}
+                    placeholder="https://maps.app.goo.gl/..."
+                    className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-amber-500 disabled:opacity-50"
+                  />
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-[11px] font-mono uppercase text-neutral-400 mb-1">
-                  Google Maps URL
-                </label>
-                <input
-                  type="url"
-                  required
-                  value={formData.googleMapsUrl}
-                  onChange={(e) => setFormData({ ...formData, googleMapsUrl: e.target.value })}
-                  placeholder="https://maps.app.goo.gl/..."
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-amber-500"
-                />
-              </div>
+                <div>
+                  <label className="block text-[11px] font-mono uppercase text-neutral-400 mb-1">
+                    Contact Telegram <span className="text-amber-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    disabled={loading}
+                    value={formData.contactTelegram}
+                    onChange={(e) => setFormData({ ...formData, contactTelegram: e.target.value })}
+                    placeholder="@username or +855..."
+                    className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-amber-500 disabled:opacity-50"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-[11px] font-mono uppercase text-neutral-400 mb-1">
-                  Contact Email
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={formData.contactEmail}
-                  onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
-                  placeholder="owner@cafe.com"
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-amber-500"
-                />
-              </div>
+                <div>
+                  <label className="block text-[11px] font-mono uppercase text-neutral-400 mb-1">
+                    Notes / Specialties (Optional)
+                  </label>
+                  <textarea
+                    rows={2}
+                    disabled={loading}
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    placeholder="Roasting style, Wi-Fi speed, parking notes..."
+                    className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-amber-500 resize-none disabled:opacity-50"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-[11px] font-mono uppercase text-neutral-400 mb-1">
-                  Notes / Specialties (Optional)
-                </label>
-                <textarea
-                  rows={2}
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="Roasting style, Wi-Fi speed, parking notes..."
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-amber-500 resize-none"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-black font-extrabold rounded text-xs uppercase tracking-widest transition-all cursor-pointer mt-2"
-              >
-                Send Submission
-              </button>
-            </form>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-extrabold rounded text-xs uppercase tracking-widest transition-all cursor-pointer mt-2"
+                >
+                  {loading ? "Sending..." : "Send Submission"}
+                </button>
+              </form>
+            </>
           )}
         </section>
       </div>

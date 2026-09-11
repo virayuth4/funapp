@@ -419,22 +419,22 @@ const startSpin = () => {
         </header>
 
         {/* Branch Filter Tabs */}
-        <div className="flex flex-wrap items-center justify-center gap-1.5 p-1 rounded-lg border border-neutral-800/80 bg-neutral-950/60 backdrop-blur-md mb-3">
-          {branches.map((branch) => (
-            <button
-              key={branch}
-              onClick={() => setSelectedBranch(branch)}
-              disabled={isSpinning}
-              className={`px-4 py-1.5 text-xs font-semibold uppercase tracking-wider rounded transition-all cursor-pointer disabled:opacity-40 ${
-                selectedBranch === branch
-                  ? "bg-amber-500 text-black shadow-lg shadow-amber-500/20"
-                  : "text-neutral-400 hover:text-white"
-              }`}
-            >
-              {branch === "ALL" ? "All Locations" : branch}
-            </button>
-          ))}
-        </div>
+       <div className="flex flex-nowrap items-center overflow-x-auto gap-1.5 p-1 rounded-lg border border-neutral-800/80 bg-neutral-950/60 backdrop-blur-md mb-3 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        {branches.map((branch) => (
+          <button
+            key={branch}
+            onClick={() => setSelectedBranch(branch)}
+            disabled={isSpinning}
+            className={`shrink-0 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider rounded transition-all cursor-pointer disabled:opacity-40 ${
+              selectedBranch === branch
+                ? "bg-amber-500 text-black shadow-lg shadow-amber-500/20"
+                : "text-neutral-400 hover:text-white"
+            }`}
+          >
+            {branch}
+          </button>
+        ))}
+      </div>
 
         {/* Type Filter Tabs (Cafe / Restaurant / All) */}
         {/* <div className="flex flex-wrap items-center justify-center gap-1.5 p-1 rounded-lg border border-neutral-800/80 bg-neutral-950/60 backdrop-blur-md mb-8">
