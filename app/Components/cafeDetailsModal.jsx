@@ -239,39 +239,50 @@ const backToCafe = () => {
 
 
 
-          {/* Actions */}
-          <div className="mt-5 flex flex-col gap-2">
-            <a
-              href={entity.map}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded text-xs font-bold transition-colors ${
-                isPartnerView
-                  ? "bg-amber-500 hover:bg-amber-400 text-black"
-                  : "bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-neutral-200 font-semibold"
-              }`}
-            >
-              <span>📍View on Google Maps ↗</span>
-            </a>
+      {/* Actions */}
+<div className="mt-5 flex flex-col gap-2.5">
+  {/* Google Maps */}
+  <a
+    href={entity.map}
+    target="_blank"
+    rel="noopener noreferrer"
+    className={`group w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-lg text-xs font-bold transition-all ${
+      isPartnerView
+        ? "bg-amber-500 hover:bg-amber-400 text-black shadow-lg shadow-amber-500/10"
+        : "bg-white hover:bg-neutral-200 text-black"
+    }`}
+  >
+    <span className="text-base">📍</span>
+    <span>Google Maps</span>
+   
+  </a>
 
-            {!isPartnerView && (
-              <div className="flex gap-2">
-                <button
-                  onClick={onExclude}
-                  className="flex-1 py-2 rounded bg-red-950/40 border border-red-900 hover:bg-red-900/60 text-red-300 text-xs font-semibold transition-colors cursor-pointer"
-                >
-                  Exclude Cafe
-                </button>
+  {!isPartnerView && (
+    <div className="flex gap-2.5">
+      {/* Exclude */}
+      <button
+        onClick={onExclude}
+        className="group flex-1 flex items-center justify-center gap-2 py-3 rounded-lg bg-neutral-900 border border-neutral-800 hover:border-red-900/70 hover:bg-red-950/30 text-neutral-400 hover:text-red-300 text-xs font-semibold transition-all cursor-pointer"
+      >
+        <span className="text-sm opacity-70 group-hover:opacity-100">
+          ⊘
+        </span>
+        <span>Exclude</span>
+      </button>
 
-                <button
-                  onClick={onSpinAgain}
-                  className="flex-1 py-2 rounded bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold transition-colors cursor-pointer"
-                >
-                  Spin Again
-                </button>
-              </div>
-            )}
-          </div>
+      {/* Spin Again */}
+      <button
+        onClick={onSpinAgain}
+        className="group flex-1 flex items-center justify-center gap-2 py-3 rounded-lg bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold transition-all shadow-md shadow-amber-500/10 cursor-pointer"
+      >
+        <span className="text-sm transition-transform group-hover:rotate-180 duration-300">
+          ↻
+        </span>
+        <span>Spin Again</span>
+      </button>
+    </div>
+  )}
+</div>
         </div>
 
         {/* Nearby partner teaser — lives inside the same modal, only on the cafe view */}

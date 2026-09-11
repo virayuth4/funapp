@@ -53,36 +53,42 @@ export default function HomeClient({ initialCafes, initialCategories, initialErr
   
 
   // --- Establishments now come from the backend instead of static data ---
-  const [cafes, setCafes] = useState(initialCafes);
-  const [availableCategories, setAvailableCategories] = useState(initialCategories);
-  const [isLoadingCafes, setIsLoadingCafes] = useState(false); // no longer loading on mount
-  const [loadError, setLoadError] = useState(initialError);
+const [cafes, setCafes] = useState(initialCafes);
+const [availableCategories, setAvailableCategories] = useState(initialCategories);
+const [isLoadingCafes, setIsLoadingCafes] = useState(!initialCafes?.length);
+const [loadError, setLoadError] = useState(initialError);
 
-  const fetchEstablishments = useCallback(async () => {
+useEffect(() => {
+  const controller = new AbortController();
+
+  async function loadData() {
     setIsLoadingCafes(true);
     setLoadError(null);
+
     try {
-      // Fetch the full list once; branch + type filtering happens client-side
-      // (same pattern as the existing branch filter) so switching tabs is instant.
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND}/api/eatdoko/establishments`
+        `${process.env.NEXT_PUBLIC_BACKEND}/api/eatdoko/establishments`,
+        { signal: controller.signal }
       );
       if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
       const json = await res.json();
+
       setCafes(Array.isArray(json.data) ? json.data : []);
       setAvailableCategories(Array.isArray(json.categories) ? json.categories : []);
     } catch (err) {
+      if (err.name === 'AbortError') return;
       console.error("Failed to fetch establishments:", err);
       setLoadError("Couldn't load cafes right now. Please try again.");
       setCafes([]);
     } finally {
       setIsLoadingCafes(false);
     }
-  }, []);
+  }
 
-  useEffect(() => {
-    fetchEstablishments();
-  }, [fetchEstablishments]);
+  loadData();
+
+  return () => controller.abort();
+}, []);
 
   const HISTORY_KEY = "cafeRollHistory";
   const MAX_HISTORY = 20;
@@ -287,76 +293,83 @@ const closeAllModals = () => {
 
 
 
+const preloadImage = (src, label = "") => {
+  if (!src) return;
 
-  const startSpin = () => {
-    if (isSpinning || availableCafes.length === 0) return;
+  const fullUrl = `/_next/image?url=${encodeURIComponent(src)}&w=1080&q=75`;
+  const img = new window.Image();
 
-    setIsSpinning(true);
-    setActiveModalItem(null);
-    setSuggestedSponsor(null);
+  // img.onload = () => {
+  //   console.log(`%c[Preload Success] ${label}: ${src}`, "color: #10b981; font-weight: bold;");
+  // };
+  // img.onerror = (err) => {
+  //   console.error(`[Preload Error] ${label}: ${src}`, err);
+  // };
 
-    const generatedReel = createReel();
-    const chosenWinner = generatedReel[WINNER_INDEX];
+  img.fetchPriority = "high";
+  img.src = fullUrl;
+};
 
-    // --- PRELOAD WINNER & SPONSOR IMAGES DURING THE 5.2s SPIN ---
-    if (chosenWinner) {
-      const imagesToPreload = [
-        ...(Array.isArray(chosenWinner.image_paths) ? chosenWinner.image_paths.slice(0, 3) : []),
-      ];
+const startSpin = () => {
+  if (isSpinning || availableCafes.length === 0) return;
 
-      imagesToPreload.forEach((src) => {
-        if (!src) return;
-        const img = new window.Image();
-        // Generate Next.js optimized URL query so the browser warms the exact file Next.js requests:
-        img.src = `/_next/image?url=${encodeURIComponent(src)}&w=384&q=75`;
-      });
-    }
+  setIsSpinning(true);
+  setActiveModalItem(null);
+  setSuggestedSponsor(null);
 
-    const jitter = (Math.random() - 0.5) * (CARD_WIDTH - 28);
-    const targetOffset = -(WINNER_INDEX * TOTAL_SLOT_WIDTH + jitter);
+  const generatedReel = createReel();
+  const chosenWinner = generatedReel[WINNER_INDEX];
 
-    setTransitionStyle("none");
-    setTranslateX(0);
-    setReelItems(generatedReel);
-    lastTickIndexRef.current = -1;
+  // --- PRELOAD WINNER IMAGES AT INDEX 0 AND 1 ---
+  const imagesToPreload = chosenWinner?.image_paths?.slice(0, 2) || [];
+  imagesToPreload.forEach((path, index) => {
+    preloadImage(path, `Index ${index}`);
+  });
 
+  const jitter = (Math.random() - 0.5) * (CARD_WIDTH - 28);
+  const targetOffset = -(WINNER_INDEX * TOTAL_SLOT_WIDTH + jitter);
+
+  setTransitionStyle("none");
+  setTranslateX(0);
+  setReelItems(generatedReel);
+  lastTickIndexRef.current = -1;
+
+  requestAnimationFrame(() => {
     requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        setTransitionStyle("transform 5.2s cubic-bezier(0.12, 0.8, 0.18, 1)");
-        setTranslateX(targetOffset);
+      setTransitionStyle("transform 5.2s cubic-bezier(0.12, 0.8, 0.18, 1)");
+      setTranslateX(targetOffset);
 
-        const startTime = performance.now();
-        const duration = 5200;
+      const startTime = performance.now();
+      const duration = 5200;
 
-        const checkTicker = (now) => {
-          const elapsed = now - startTime;
-          const progress = Math.min(elapsed / duration, 1);
+      const checkTicker = (now) => {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
 
-          const easedProgress = 1 - Math.pow(1 - progress, 4);
-          const currentPos = Math.abs(targetOffset * easedProgress);
-          const currentSlot = Math.floor((currentPos + CARD_WIDTH / 2) / TOTAL_SLOT_WIDTH);
+        const easedProgress = 1 - Math.pow(1 - progress, 4);
+        const currentPos = Math.abs(targetOffset * easedProgress);
+        const currentSlot = Math.floor((currentPos + CARD_WIDTH / 2) / TOTAL_SLOT_WIDTH);
 
-          if (currentSlot !== lastTickIndexRef.current && currentSlot <= WINNER_INDEX) {
-            lastTickIndexRef.current = currentSlot;
-            spinSoundsRef.current?.playTickSound(easedProgress);
-          }
+        if (currentSlot !== lastTickIndexRef.current && currentSlot <= WINNER_INDEX) {
+          lastTickIndexRef.current = currentSlot;
+          spinSoundsRef.current?.playTickSound(easedProgress);
+        }
 
-          if (progress < 1) {
-            animationFrameRef.current = requestAnimationFrame(checkTicker);
-          } else {
-            spinSoundsRef.current?.playRevealSound();
-            // Spin finished
-            setSuggestedSponsor(pickSponsorFor(chosenWinner));
-            setActiveModalItem(chosenWinner);
-            addToHistory(chosenWinner);
-            setIsSpinning(false);
-          }
-        };
+        if (progress < 1) {
+          animationFrameRef.current = requestAnimationFrame(checkTicker);
+        } else {
+          spinSoundsRef.current?.playRevealSound();
+          setSuggestedSponsor(pickSponsorFor(chosenWinner));
+          setActiveModalItem(chosenWinner);
+          addToHistory(chosenWinner);
+          setIsSpinning(false);
+        }
+      };
 
-        animationFrameRef.current = requestAnimationFrame(checkTicker);
-      });
+      animationFrameRef.current = requestAnimationFrame(checkTicker);
     });
-  };
+  });
+};
 
   const handleRemoveCafe = (cafeId) => {
     setRemovedIds((prev) => [...prev, cafeId]);
@@ -481,7 +494,7 @@ const closeAllModals = () => {
                 <div
                   className="flex items-center absolute"
                   style={{
-                    left: "50%",
+                    left: "40%",
                     marginLeft: `-${CARD_WIDTH / 2}px`,
                     gap: `${CARD_GAP}px`,
                     transform: `translate3d(${translateX}px, 0, 0)`,
