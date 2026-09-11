@@ -40,7 +40,7 @@ export default function CafeListView({
   }
 
   return (
-    <div className="w-full max-w-3xl mx-auto flex flex-col">
+    <div className="w-full max-w-3xl mx-auto flex flex-col mt-6">
       <div className="flex items-center justify-between mb-3 px-1">
         <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-500">
           All Cafes

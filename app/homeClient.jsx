@@ -578,7 +578,7 @@ const startSpin = () => {
                 </div>
               )}
               {rollHistory.length > 0 && (
-                <div className="mt-6 mb-6 w-full max-w-sm">
+                <div className="mt-6 w-full max-w-sm">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-500">
                       Recent Spins
