@@ -12,24 +12,25 @@ export default function CafeDetailModal({
   isOpen,
   onClose,
   cafe,
-  sponsor,
+  sponsors, // array of up to 3 sponsor cafes
   accentColor,
   onExclude,
   onSpinAgain,
   zIndex = 50,
-  isList=false,
+  isList = false,
 }) {
   const [view, setView] = useState("cafe"); // "cafe" | "partner"
+  const [activeSponsor, setActiveSponsor] = useState(null);
   const [expandedImage, setExpandedImage] = useState(null);
   const [activeSlide, setActiveSlide] = useState(0);
   const scrollRef = useRef(null);
 
-
+  const sponsorList = Array.isArray(sponsors) ? sponsors.filter(Boolean).slice(0, 3) : [];
 
   if (!isOpen || !cafe) return null;
 
   const isPartnerView = view === "partner";
-  const entity = isPartnerView ? sponsor : cafe;
+  const entity = isPartnerView ? activeSponsor : cafe;
   if (!entity) return null;
 
   const color = isPartnerView
@@ -40,58 +41,56 @@ export default function CafeDetailModal({
     ? entity.image_paths.filter(Boolean).slice(0, 10)
     : [];
 
-const scrollToSlide = (idx) => {
-  const el = scrollRef.current;
-  if (!el) return;
+  const scrollToSlide = (idx) => {
+    const el = scrollRef.current;
+    if (!el) return;
 
-  const slide = el.children[idx];
-  if (!slide) return;
+    const slide = el.children[idx];
+    if (!slide) return;
 
-  el.scrollTo({
-    left: slide.offsetLeft,
-    behavior: "smooth",
-  });
+    el.scrollTo({
+      left: slide.offsetLeft,
+      behavior: "smooth",
+    });
 
-  setActiveSlide(idx);
-};
+    setActiveSlide(idx);
+  };
 
+  const handleScroll = () => {
+    const el = scrollRef.current;
+    if (!el || !el.children.length) return;
 
+    const scrollLeft = el.scrollLeft;
 
-const handleScroll = () => {
-  const el = scrollRef.current;
-  if (!el || !el.children.length) return;
+    let closestIndex = 0;
+    let closestDistance = Infinity;
 
-  const scrollLeft = el.scrollLeft;
+    Array.from(el.children).forEach((child, idx) => {
+      const distance = Math.abs(child.offsetLeft - scrollLeft);
 
-  let closestIndex = 0;
-  let closestDistance = Infinity;
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestIndex = idx;
+      }
+    });
 
-  Array.from(el.children).forEach((child, idx) => {
-    const distance = Math.abs(child.offsetLeft - scrollLeft);
-
-    if (distance < closestDistance) {
-      closestDistance = distance;
-      closestIndex = idx;
-    }
-  });
-
-  setActiveSlide(closestIndex);
-};
-
-  
+    setActiveSlide(closestIndex);
+  };
 
   const openLightbox = (idx) => setExpandedImage(idx);
-const goToPartner = () => {
-  setExpandedImage(null);
-  setActiveSlide(0);
-  setView("partner");
-};
 
-const backToCafe = () => {
-  setExpandedImage(null);
-  setActiveSlide(0);
-  setView("cafe");
-};
+  const goToPartner = (sponsorCafe) => {
+    setExpandedImage(null);
+    setActiveSlide(0);
+    setActiveSponsor(sponsorCafe);
+    setView("partner");
+  };
+
+  const backToCafe = () => {
+    setExpandedImage(null);
+    setActiveSlide(0);
+    setView("cafe");
+  };
 
   return (
     <div
@@ -131,7 +130,7 @@ const backToCafe = () => {
         </button>
 
         {/* Content swaps between cafe / partner, with a light transition */}
-        <div key={view} className="animate-in fade-in slide-in-from-right-2 duration-200">
+        <div key={view + (activeSponsor?.id ?? "")} className="animate-in fade-in slide-in-from-right-2 duration-200">
           {/* Identity */}
           <div className={`flex items-center gap-4 ${isPartnerView ? "mt-4" : ""}`}>
             <Image
@@ -160,163 +159,164 @@ const backToCafe = () => {
             </div>
           </div>
 
-      
-{/* Photo Carousel */}
-{galleryImages.length > 0 && (
-  <div className="mt-5 relative">
-    <div
-      ref={scrollRef}
-      onScroll={handleScroll}
-      className="flex overflow-x-auto snap-x snap-mandatory rounded-lg no-scrollbar"
-      style={{ scrollbarWidth: "none" }}
-    >
-      {galleryImages.map((src, idx) => (
-        <button
-          key={`${src}-${idx}`}
-          onClick={() => openLightbox(idx)}
-          className="relative w-[85%] aspect-[5/3] shrink-0 snap-center overflow-hidden border border-neutral-800 bg-neutral-900 cursor-pointer rounded-lg mr-2"
-        >
-          <Image
-            src={src}
-            alt={`${entity.name} photo ${idx + 1}`}
-            fill
-            sizes="320px"
-            className="object-cover"
-          />
-        </button>
-      ))}
-    </div>
+          {/* Photo Carousel */}
+          {galleryImages.length > 0 && (
+            <div className="mt-5 relative">
+              <div
+                ref={scrollRef}
+                onScroll={handleScroll}
+                className="flex overflow-x-auto snap-x snap-mandatory rounded-lg no-scrollbar"
+                style={{ scrollbarWidth: "none" }}
+              >
+                {galleryImages.map((src, idx) => (
+                  <button
+                    key={`${src}-${idx}`}
+                    onClick={() => openLightbox(idx)}
+                    className="relative w-[85%] aspect-[5/3] shrink-0 snap-center overflow-hidden border border-neutral-800 bg-neutral-900 cursor-pointer rounded-lg mr-2"
+                  >
+                    <Image
+                      src={src}
+                      alt={`${entity.name} photo ${idx + 1}`}
+                      fill
+                      sizes="320px"
+                      className="object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
 
-    {/* Full screen indicator */}
-    <div className="pointer-events-none absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full bg-black/65 backdrop-blur-sm border border-white/10 text-white text-[10px] font-semibold shadow-lg">
-      <Maximize2 size={13} strokeWidth={2} />
-      <span>View full screen</span>
-    </div>
+              {/* Full screen indicator */}
+              <div className="pointer-events-none absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full bg-black/65 backdrop-blur-sm border border-white/10 text-white text-[10px] font-semibold shadow-lg">
+                <Maximize2 size={13} strokeWidth={2} />
+                <span>View full screen</span>
+              </div>
 
-    {galleryImages.length > 1 && (
-      <>
-        <button
-          onClick={() => scrollToSlide(Math.max(activeSlide - 1, 0))}
-          disabled={activeSlide === 0}
-          className="absolute left-1.5 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center rounded-full bg-black/60 text-white text-xs hover:bg-black/80 disabled:opacity-0 transition-opacity cursor-pointer"
-          aria-label="Previous photo"
-        >
-          ‹
-        </button>
+              {galleryImages.length > 1 && (
+                <>
+                  <button
+                    onClick={() => scrollToSlide(Math.max(activeSlide - 1, 0))}
+                    disabled={activeSlide === 0}
+                    className="absolute left-1.5 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center rounded-full bg-black/60 text-white text-xs hover:bg-black/80 disabled:opacity-0 transition-opacity cursor-pointer"
+                    aria-label="Previous photo"
+                  >
+                    ‹
+                  </button>
 
-        <button
-          onClick={() =>
-            scrollToSlide(
-              Math.min(activeSlide + 1, galleryImages.length - 1)
-            )
-          }
-          disabled={activeSlide === galleryImages.length - 1}
-          className="absolute right-1.5 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center rounded-full bg-black/60 text-white text-xs hover:bg-black/80 disabled:opacity-0 transition-opacity cursor-pointer"
-          aria-label="Next photo"
-        >
-          ›
-        </button>
+                  <button
+                    onClick={() =>
+                      scrollToSlide(
+                        Math.min(activeSlide + 1, galleryImages.length - 1)
+                      )
+                    }
+                    disabled={activeSlide === galleryImages.length - 1}
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center rounded-full bg-black/60 text-white text-xs hover:bg-black/80 disabled:opacity-0 transition-opacity cursor-pointer"
+                    aria-label="Next photo"
+                  >
+                    ›
+                  </button>
 
-        {/* Dots */}
-        <div className="flex items-center justify-center gap-1.5 mt-2">
-          {galleryImages.map((_, idx) => (
-            <button
-              key={idx}
-              onClick={() => scrollToSlide(idx)}
-              className={`h-1.5 rounded-full transition-all cursor-pointer ${
-                idx === activeSlide
-                  ? "w-4 bg-amber-400"
-                  : "w-1.5 bg-neutral-700"
+                  {/* Dots */}
+                  <div className="flex items-center justify-center gap-1.5 mt-2">
+                    {galleryImages.map((_, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => scrollToSlide(idx)}
+                        className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                          idx === activeSlide
+                            ? "w-4 bg-amber-400"
+                            : "w-1.5 bg-neutral-700"
+                        }`}
+                        aria-label={`Go to photo ${idx + 1}`}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="mt-5 flex flex-col gap-2.5">
+            {/* Google Maps */}
+            <a
+              href={entity.map}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`group w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-lg text-xs font-bold transition-all ${
+                isPartnerView
+                  ? "bg-amber-500 hover:bg-amber-400 text-black shadow-lg shadow-amber-500/10"
+                  : "bg-white hover:bg-neutral-200 text-black"
               }`}
-              aria-label={`Go to photo ${idx + 1}`}
-            />
-          ))}
-        </div>
-      </>
-    )}
-  </div>
-)}
+            >
+              <span className="text-base">📍</span>
+              <span>Google Maps</span>
+            </a>
 
+            {/* Exclude / Spin Again only make sense when this came from a spin,
+                not when opened by tapping a row in the full cafe list. */}
+            {!isPartnerView && !isList && (
+              <div className="flex gap-2.5">
+                <button
+                  onClick={onExclude}
+                  className="group flex-1 flex items-center justify-center gap-2 py-3 rounded-lg bg-neutral-900 border border-neutral-800 hover:border-red-900/70 hover:bg-red-950/30 text-neutral-400 hover:text-red-300 text-xs font-semibold transition-all cursor-pointer"
+                >
+                  <span className="text-sm opacity-70 group-hover:opacity-100">
+                    ⊘
+                  </span>
+                  <span>Exclude</span>
+                </button>
 
-
-      {/* Actions */}
-<div className="mt-5 flex flex-col gap-2.5">
-  {/* Google Maps */}
-  <a
-    href={entity.map}
-    target="_blank"
-    rel="noopener noreferrer"
-    className={`group w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-lg text-xs font-bold transition-all ${
-      isPartnerView
-        ? "bg-amber-500 hover:bg-amber-400 text-black shadow-lg shadow-amber-500/10"
-        : "bg-white hover:bg-neutral-200 text-black"
-    }`}
-  >
-    <span className="text-base">📍</span>
-    <span>Google Maps</span>
-   
-  </a>
-
-  {!isPartnerView && (
-    <div className="flex gap-2.5">
-      {/* Exclude */}
-      <button
-        onClick={onExclude}
-        className="group flex-1 flex items-center justify-center gap-2 py-3 rounded-lg bg-neutral-900 border border-neutral-800 hover:border-red-900/70 hover:bg-red-950/30 text-neutral-400 hover:text-red-300 text-xs font-semibold transition-all cursor-pointer"
-      >
-        <span className="text-sm opacity-70 group-hover:opacity-100">
-          ⊘
-        </span>
-        <span>Exclude</span>
-      </button>
-
-      {/* Spin Again */}
-      <button
-        onClick={onSpinAgain}
-        className="group flex-1 flex items-center justify-center gap-2 py-3 rounded-lg bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold transition-all shadow-md shadow-amber-500/10 cursor-pointer"
-      >
-        <span className="text-sm transition-transform group-hover:rotate-180 duration-300">
-          ↻
-        </span>
-        <span>Spin Again</span>
-      </button>
-    </div>
-  )}
-</div>
+                <button
+                  onClick={onSpinAgain}
+                  className="group flex-1 flex items-center justify-center gap-2 py-3 rounded-lg bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold transition-all shadow-md shadow-amber-500/10 cursor-pointer"
+                >
+                  <span className="text-sm transition-transform group-hover:rotate-180 duration-300">
+                    ↻
+                  </span>
+                  <span>Spin Again</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Nearby partner teaser — lives inside the same modal, only on the cafe view */}
-        {!isPartnerView && sponsor && (
+        {/* Nearby partner teaser — up to 3 cards, only on the cafe view */}
+        {!isPartnerView && sponsorList.length > 0 && (
           <div className="mt-5 pt-4 border-t border-neutral-900">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] font-mono tracking-wider uppercase text-neutral-400">
-                Nearby In {sponsor.branch_location}
+                Nearby In {sponsorList[0].branch_location}
               </span>
               <span className="text-[9px] font-mono tracking-widest uppercase text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded">
                 Partner
               </span>
             </div>
 
-            <button
-              onClick={goToPartner}
-              className="w-full flex items-center justify-between p-2 rounded-lg border border-neutral-900 bg-neutral-900/50 hover:bg-neutral-900 transition-all group cursor-pointer"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <Image
-                  src={sponsor.logo_url}
-                  alt={sponsor.name}
-                  width={64}
-                  height={64}
-                  className="w-8 h-8 rounded-lg object-cover border border-neutral-700/60 shadow-md"
-                />
-                <div className="min-w-0">
-                  <h4 className="text-xs font-medium text-neutral-200 truncate group-hover:text-white">
-                    {sponsor.name}
-                  </h4>
-                </div>
-              </div>
-              <span className="text-neutral-500 group-hover:text-white text-xs pl-2">→</span>
-            </button>
+            <div className="flex flex-col gap-1.5">
+              {sponsorList.map((sponsorCafe) => (
+                <button
+                  key={sponsorCafe.id}
+                  onClick={() => goToPartner(sponsorCafe)}
+                  className="w-full flex items-center justify-between p-2 rounded-lg border border-neutral-900 bg-neutral-900/50 hover:bg-neutral-900 transition-all group cursor-pointer"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Image
+                      src={sponsorCafe.logo_url}
+                      alt={sponsorCafe.name}
+                      width={64}
+                      height={64}
+                      className="w-8 h-8 rounded-lg object-cover border border-neutral-700/60 shadow-md"
+                    />
+                    <div className="min-w-0">
+                      <h4 className="text-xs font-medium text-neutral-200 truncate group-hover:text-white">
+                        {sponsorCafe.name}
+                      </h4>
+                    </div>
+                  </div>
+                  <span className="text-neutral-500 group-hover:text-white text-xs pl-2">→</span>
+                </button>
+              ))}
+            </div>
 
             <div className="mt-2 text-right">
               <Link
