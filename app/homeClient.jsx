@@ -409,7 +409,7 @@ const startSpin = () => {
 
       <div className="flex flex-col items-center w-full max-w-4xl relative z-10">
         {/* Header */}
-        <header className="text-center mb-8">
+        <header className="text-center mb-8 mt-16">
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-wider text-white uppercase drop-shadow-md">
             Where to next?
           </h1>
