@@ -389,7 +389,7 @@ const startSpin = () => {
   };
 
   return (
-    <main className="min-h-screen bg-[#0d0f12] text-neutral-100 flex flex-col  items-center px-4 py-8 relative overflow-hidden select-none">
+    <main className="min-h-screen bg-[#0d0f12] text-neutral-100 flex flex-col  items-center px-4 py-2 relative overflow-hidden select-none">
       <SpinSounds ref={spinSoundsRef} />
       <style jsx global>{`
     @keyframes pulseGlow {
