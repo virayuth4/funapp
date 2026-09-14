@@ -76,7 +76,7 @@ export default function RollHistory({
   const entries = isGlobalTab ? globalHistory : localHistory;
 
   return (
-    <div className="mt-6 w-[384px] max-w-full shrink-0">
+    <div className="mt-6 w-[350px] max-w-full shrink-0">
       {/* Header */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-1 p-0.5 rounded bg-neutral-900/60 border border-neutral-800/70">

@@ -409,7 +409,7 @@ const openHistoryEntry = (entry) => {
 };
 
       return (
-        <main className="min-h-screen bg-[#0d0f12] text-neutral-100 flex flex-col  items-center px-4 py-2 relative overflow-hidden select-none">
+        <main className="min-h-screen bg-[#0d0f12] text-neutral-100 flex flex-col  items-center px-4  relative overflow-hidden select-none">
           <SpinSounds ref={spinSoundsRef} />
           <style jsx global>{`
         @keyframes pulseGlow {
@@ -429,7 +429,7 @@ const openHistoryEntry = (entry) => {
 
           <div className="flex flex-col items-center w-full max-w-4xl relative z-10">
             {/* Header */}
-            <header className="text-center mb-8 mt-16">
+            <header className="text-center mb-8 mt-6 md:mt-16  ">
               <h1 className="text-3xl sm:text-4xl font-extrabold tracking-wider text-white uppercase drop-shadow-md">
                 Where to next?
               </h1>
