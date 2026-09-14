@@ -15,7 +15,12 @@ export default function Navigation() {
 });
  
   return (
-    <nav className="w-full max-w-full ">
+    <nav
+  style={{
+    backgroundColor: isHome ? "#0d0f12" : "#fff",
+  }}
+  className="w-full max-w-full"
+>
      <div
   className={`flex items-center justify-between p-4 md:px-24 border shadow-lg ${
     isHome
@@ -33,7 +38,7 @@ export default function Navigation() {
               : "text-neutral-900 hover:text-amber-500"
           }`}
         >
-          <Shuffle size={16} />
+     
           <span>Eat Doko (Next)?</span>
         </Link>
 

@@ -214,7 +214,7 @@ export default function CafeDetailModal({
       )}
 
       {/* Full screen indicator */}
-      <div className="pointer-events-none absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full bg-black/65 backdrop-blur-sm border border-white/10 text-white text-[10px] font-semibold shadow-lg">
+      <div className="pointer-events-none absolute bottom-1 left-1/2 -translate-x-1/2 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full bg-black/65 backdrop-blur-sm border border-white/10 text-white text-[10px] font-semibold shadow-lg">
         <Maximize2 size={13} strokeWidth={2} />
         <span>View full screen</span>
       </div>
