@@ -172,7 +172,7 @@ export default function CafeDetailModal({
                   <button
                     key={`${src}-${idx}`}
                     onClick={() => openLightbox(idx)}
-                    className="relative w-[85%] aspect-[5/3] shrink-0 snap-center overflow-hidden border border-neutral-800 bg-neutral-900 cursor-pointer rounded-lg mr-2"
+                    className="relative w-[75%] aspect-[5/3] shrink-0 snap-center overflow-hidden border border-neutral-800 bg-neutral-900 cursor-pointer rounded-lg mr-2"
                   >
                     <Image
                       src={src}
