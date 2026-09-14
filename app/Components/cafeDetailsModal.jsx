@@ -159,81 +159,86 @@ export default function CafeDetailModal({
             </div>
           </div>
 
-          {/* Photo Carousel */}
-          {galleryImages.length > 0 && (
-            <div className="mt-5 relative">
-              <div
-                ref={scrollRef}
-                onScroll={handleScroll}
-                className="flex overflow-x-auto snap-x snap-mandatory rounded-lg no-scrollbar"
-                style={{ scrollbarWidth: "none" }}
-              >
-                {galleryImages.map((src, idx) => (
-                  <button
-                    key={`${src}-${idx}`}
-                    onClick={() => openLightbox(idx)}
-                    className="relative w-[75%] aspect-[5/3] shrink-0 snap-center overflow-hidden border border-neutral-800 bg-neutral-900 cursor-pointer rounded-lg mr-2"
-                  >
-                    <Image
-                      src={src}
-                      alt={`${entity.name} photo ${idx + 1}`}
-                      fill
-                      sizes="320px"
-                      className="object-cover"
-                    />
-                  </button>
-                ))}
-              </div>
+         {/* Photo Carousel */}
+{galleryImages.length > 0 && (
+  <div className="mt-5">
+    <div className="relative">
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="flex overflow-x-auto snap-x snap-mandatory rounded-lg no-scrollbar"
+        style={{ scrollbarWidth: "none" }}
+      >
+        {galleryImages.map((src, idx) => (
+          <button
+            key={`${src}-${idx}`}
+            onClick={() => openLightbox(idx)}
+            className="relative w-[75%] aspect-[5/3] shrink-0 snap-center overflow-hidden border border-neutral-800 bg-neutral-900 cursor-pointer rounded-lg mr-2"
+          >
+            <Image
+              src={src}
+              alt={`${entity.name} photo ${idx + 1}`}
+              fill
+              sizes="320px"
+              className="object-cover"
+            />
+          </button>
+        ))}
+      </div>
 
-              {/* Full screen indicator */}
-              <div className="pointer-events-none absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full bg-black/65 backdrop-blur-sm border border-white/10 text-white text-[10px] font-semibold shadow-lg">
-                <Maximize2 size={13} strokeWidth={2} />
-                <span>View full screen</span>
-              </div>
+      {/* Navigation arrows */}
+      {galleryImages.length > 1 && (
+        <>
+          <button
+            onClick={() => scrollToSlide(Math.max(activeSlide - 1, 0))}
+            disabled={activeSlide === 0}
+            className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80 disabled:opacity-0 transition-opacity cursor-pointer"
+            aria-label="Previous photo"
+          >
+            ‹
+          </button>
 
-              {galleryImages.length > 1 && (
-                <>
-                  <button
-                    onClick={() => scrollToSlide(Math.max(activeSlide - 1, 0))}
-                    disabled={activeSlide === 0}
-                    className="absolute left-1.5 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center rounded-full bg-black/60 text-white text-xs hover:bg-black/80 disabled:opacity-0 transition-opacity cursor-pointer"
-                    aria-label="Previous photo"
-                  >
-                    ‹
-                  </button>
+          <button
+            onClick={() =>
+              scrollToSlide(
+                Math.min(activeSlide + 1, galleryImages.length - 1)
+              )
+            }
+            disabled={activeSlide === galleryImages.length - 1}
+            className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80 disabled:opacity-0 transition-opacity cursor-pointer"
+            aria-label="Next photo"
+          >
+            ›
+          </button>
+        </>
+      )}
 
-                  <button
-                    onClick={() =>
-                      scrollToSlide(
-                        Math.min(activeSlide + 1, galleryImages.length - 1)
-                      )
-                    }
-                    disabled={activeSlide === galleryImages.length - 1}
-                    className="absolute right-1.5 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center rounded-full bg-black/60 text-white text-xs hover:bg-black/80 disabled:opacity-0 transition-opacity cursor-pointer"
-                    aria-label="Next photo"
-                  >
-                    ›
-                  </button>
+      {/* Full screen indicator */}
+      <div className="pointer-events-none absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full bg-black/65 backdrop-blur-sm border border-white/10 text-white text-[10px] font-semibold shadow-lg">
+        <Maximize2 size={13} strokeWidth={2} />
+        <span>View full screen</span>
+      </div>
+    </div>
 
-                  {/* Dots */}
-                  <div className="flex items-center justify-center gap-1.5 mt-2">
-                    {galleryImages.map((_, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => scrollToSlide(idx)}
-                        className={`h-1.5 rounded-full transition-all cursor-pointer ${
-                          idx === activeSlide
-                            ? "w-4 bg-amber-400"
-                            : "w-1.5 bg-neutral-700"
-                        }`}
-                        aria-label={`Go to photo ${idx + 1}`}
-                      />
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          )}
+    {/* Dots */}
+    {galleryImages.length > 1 && (
+      <div className="flex items-center justify-center gap-1.5 mt-2">
+        {galleryImages.map((_, idx) => (
+          <button
+            key={idx}
+            onClick={() => scrollToSlide(idx)}
+            className={`h-1.5 rounded-full transition-all cursor-pointer ${
+              idx === activeSlide
+                ? "w-4 bg-amber-400"
+                : "w-1.5 bg-neutral-700"
+            }`}
+            aria-label={`Go to photo ${idx + 1}`}
+          />
+        ))}
+      </div>
+    )}
+  </div>
+)}
 
           {/* Actions */}
           <div className="mt-5 flex flex-col gap-2.5">
