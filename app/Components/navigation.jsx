@@ -19,8 +19,8 @@ export default function Navigation() {
      <div
   className={`flex items-center justify-between p-4 md:px-24 border shadow-lg ${
     isHome
-      ? "border-neutral-800/80 bg-[#0d0f12]!"
-      : "border-neutral-200 bg-white!"
+      ? "border-neutral-800/80 !bg-[#0d0f12]"
+      : "border-neutral-200 !bg-white"
   }`}
 >
         
