@@ -9,6 +9,10 @@ export default function Navigation() {
   const isHome = pathname === "/";
 
   if (pathname === '/happy-potato') return null
+  console.log({
+  pathname,
+  isHome,
+});
  
   return (
     <nav className="w-full max-w-full ">
