@@ -125,7 +125,7 @@ function AddProductForm() {
     async function loadProduct() {
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND}/api/eatdoko/products/eatdoko-products/${productId}`,
+          `${process.env.NEXT_PUBLIC_BACKEND}/api/eatdoko/product/eatdoko-products/${productId}`,
           { method: "GET" }
         );
         const json = await res.json();

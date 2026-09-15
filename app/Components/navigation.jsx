@@ -18,11 +18,11 @@ export default function Navigation() {
       <div className="flex items-center justify-between p-4 md:px-24">
         <Link
           href="/"
-          className={`flex items-center gap-2 text-sm font-bold tracking-wide transition-colors ${
-            isHome
-              ? "text-white hover:text-amber-400"
-              : "text-neutral-900 hover:text-amber-500"
-          }`}
+         className={`flex items-center gap-2 text-sm font-bold tracking-wide transition-colors ${
+          isHome
+            ? "!text-white hover:!text-amber-400"
+            : "!text-neutral-900 hover:!text-amber-500"
+        }`}
         >
           <span>Eat Doko (Next)?</span>
         </Link>
