@@ -6,9 +6,12 @@ import { usePathname } from "next/navigation";
 export default function Navigation() {
   const pathname = usePathname();
 
-  if (pathname === "/happy-potato") return null;
+  // Normalize the path by removing trailing slashes (e.g., "//" or "/en/")
+  const normalizedPath = pathname?.replace(/\/$/, "") || "/";
+  
+  if (normalizedPath === "/happy-potato") return null;
 
-  const isHome = pathname === "/";
+  const isHome = normalizedPath === "/";
 
   return (
     <nav className="fixed top-0 left-0 z-50 w-full max-w-full">
