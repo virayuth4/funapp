@@ -92,19 +92,19 @@ function SponsoredBadge({ className = '' }) {
 
 function ImageCarousel({ images, name, rank, saved, onToggleSave, isSponsored }) {
   const scrollRef = useRef(null);
-  const shown = images.slice(0, 3);
+  const shown = images.slice(0, 10);
   const hasOverflow = images.length > 3;
 
   return (
     <div className="relative w-full sm:hidden">
       <div
         ref={scrollRef}
-        className="flex w-full snap-x snap-mandatory gap-1.5 overflow-x-auto scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex w-full snap-x snap-mandatory  overflow-x-auto scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {shown.map((src, i) => (
           <div
             key={i}
-            className="relative aspect-square w-1/3 shrink-0 snap-start overflow-hidden bg-gray-100"
+            className="relative aspect-[4/5] w-1/3 shrink-0 snap-start overflow-hidden bg-gray-100"
           >
             <Image
               src={src}
@@ -114,17 +114,13 @@ function ImageCarousel({ images, name, rank, saved, onToggleSave, isSponsored })
               className="object-cover"
               priority={rank === 1 && i === 0}
             />
-            {i === 2 && hasOverflow && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-sm font-semibold text-white">
-                +{images.length - 3}
-              </div>
-            )}
+          
           </div>
         ))}
       </div>
 
       {/* <SavedButton saved={saved} onToggle={onToggleSave} /> */}
-      {isSponsored && <SponsoredBadge />}
+      {/* {isSponsored && <SponsoredBadge />} */}
     </div>
   );
 }
@@ -138,7 +134,7 @@ function ImageCollage({ images, name, rank, saved, onToggleSave, isSponsored }) 
   return (
     <div className="relative hidden h-52 w-72 shrink-0 overflow-hidden bg-gray-100 sm:block">
       {/* <SavedButton saved={saved} onToggle={onToggleSave} /> */}
-      {isSponsored && <SponsoredBadge />}
+      {/* {isSponsored && <SponsoredBadge />} */}
 
       {count <= 1 ? (
         <div className="relative block h-full w-full">
@@ -203,7 +199,7 @@ export default function EstablishmentCard({ cafe, rank }) {
 
   const header = (
     <>
-      <div className="flex items-start justify-between gap-2">
+      <div className="flex items-start justify-between gap-2 px-4">
         <h2 className="text-base font-bold leading-snug text-gray-900 sm:text-lg">
           {rank ? `${rank}. ` : ''}
           {cafe.name}
@@ -224,7 +220,7 @@ export default function EstablishmentCard({ cafe, rank }) {
         <BubbleRating rating={cafe.rating} count={cafe.review_count} />
       </div>
 
-      <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-gray-600 sm:text-sm">
+      <div className="px-4 mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-gray-600 sm:text-sm">
         {cafe.category && (
           <span className="flex items-center gap-1 capitalize">
             {cafe.category}
@@ -289,7 +285,7 @@ export default function EstablishmentCard({ cafe, rank }) {
               </p>
             ))
           ) : cafe.description ? (
-            <p className="line-clamp-2 text-xs italic text-gray-600 sm:text-sm">{cafe.description}</p>
+            <p className="px-4 line-clamp-2 text-xs italic text-gray-600 sm:text-sm">{cafe.description}</p>
           ) : null}
         </div>
       </div>

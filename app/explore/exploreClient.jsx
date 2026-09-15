@@ -52,7 +52,7 @@ export default function ExploreClient({ initialCafes, initialCategories, initial
   }, [cafes, selectedType]);
 
   return (
-    <main className="min-h-screen bg-white  text-neutral-100 px-4 py-10">
+    <main className="min-h-screen bg-white  text-neutral-100  py-10">
       <div className="mx-auto w-full max-w-5xl">
         <header className="text-center mb-8">
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-wider uppercase text-black     drop-shadow-md">
