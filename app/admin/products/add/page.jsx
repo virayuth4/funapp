@@ -21,6 +21,7 @@ const CATEGORY_CONFIG = {
       "Cappuccino",
       "Espresso",
       "Tea",
+      "Milk Tea",
       "Smoothie",
       "Chocolate",
       "Other",

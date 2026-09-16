@@ -74,6 +74,7 @@
           );
           if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
           const json = await res.json();
+          console.log("Cafe", json)
 
           setCafes(Array.isArray(json.data) ? json.data : []);
           setAvailableCategories(Array.isArray(json.categories) ? json.categories : []);
@@ -111,13 +112,21 @@
 
       // Type tabs: always offer All + whatever your data actually contains,
       // so this doesn't break if you add more types later.
-      const typeTabs = useMemo(() => {
-        const known = new Set(["cafe", "restaurants"]);
-        availableCategories.forEach((c) => {
-          if (c) known.add(String(c).toLowerCase());
+   const typeTabs = useMemo(() => {
+  const known = new Set(["cafe", "restaurant"]);
+  availableCategories.forEach((c) => {
+    if (c) {
+      String(c)
+        .toLowerCase()
+        .split(",")
+        .forEach((cat) => {
+          const trimmed = cat.trim();
+          if (trimmed) known.add(trimmed);
         });
-        return ["ALL", ...Array.from(known)];
-      }, [availableCategories]);
+    }
+  });
+  return ["ALL", ...Array.from(known)];
+}, [availableCategories]);
 
       
 
@@ -137,18 +146,26 @@
     };
 
       // Filter available cafes
-      const availableCafes = useMemo(() => {
-        return cafes.filter((cafe) => {
-          const matchInRoll = cafe.in_roll === true;
-          const matchBranch =
-            selectedBranch === "ALL" || cafe.branch_location === selectedBranch;
-          const matchType =
-            selectedType === "ALL" ||
-            String(cafe[TYPE_FIELD] || "").toLowerCase() === selectedType.toLowerCase();
-          const notRemoved = !removedIds.includes(cafe.id);
-          return matchInRoll && matchBranch && matchType && notRemoved;
-        });
-      }, [cafes, selectedBranch, selectedType, removedIds]);
+ const availableCafes = useMemo(() => {
+  return cafes.filter((cafe) => {
+    const matchInRoll = cafe.in_roll === true;
+    const matchBranch =
+      selectedBranch === "ALL" || cafe.branch_location === selectedBranch;
+
+    // Split "cafe,bakery" into ["cafe", "bakery"] and check inclusion
+    const cafeCategories = String(cafe[TYPE_FIELD] || "")
+      .toLowerCase()
+      .split(",")
+      .map((cat) => cat.trim());
+
+    const matchType =
+      selectedType === "ALL" ||
+      cafeCategories.includes(selectedType.toLowerCase());
+
+    const notRemoved = !removedIds.includes(cafe.id);
+    return matchInRoll && matchBranch && matchType && notRemoved;
+  });
+}, [cafes, selectedBranch, selectedType, removedIds]);
 
 
 
@@ -433,9 +450,9 @@ const openHistoryEntry = (entry) => {
               <h1 className="text-3xl sm:text-4xl font-extrabold tracking-wider text-white uppercase drop-shadow-md">
                 Where to next?
               </h1>
-              <p className="mt-1 text-xs sm:text-sm text-neutral-400">
+              {/* <p className="mt-1 text-xs sm:text-sm text-neutral-400">
                 Spin to select your next cafe destination.
-              </p>
+              </p> */}
             </header>
 
             {/* Branch Filter Tabs */}

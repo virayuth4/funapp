@@ -22,6 +22,7 @@ function AddEstablishmentForm() {
   const [instagram, setInstagram] = useState("");
   const [isSponsored, setIsSponsored] = useState(false);
   const [inRoll, setInRoll] = useState(true);
+  const [cuisine, setCuisine] = useState("");
 
   const [logo, setLogo] = useState(null); // { file, previewUrl }
   const [existingLogoUrl, setExistingLogoUrl] = useState("");
@@ -50,6 +51,22 @@ function AddEstablishmentForm() {
   const [errorMessage, setErrorMessage] = useState("");
 
   const totalImageCount = images.length;
+
+  function parseCuisineInput(raw, category) {
+  if (!category || category.trim().toLowerCase() !== 'restaurant') return null;
+  if (!raw) return null;
+
+  let list;
+  try {
+    const parsed = JSON.parse(raw);
+    list = Array.isArray(parsed) ? parsed : String(raw).split(',');
+  } catch {
+    list = String(raw).split(',');
+  }
+
+  const cleaned = list.map((c) => String(c).trim().toLowerCase()).filter(Boolean);
+  return cleaned.length ? cleaned : null;
+}
 
   // Auto-generate slug from name until the user edits slug manually
   function generateSlug(text) {
@@ -87,6 +104,7 @@ function AddEstablishmentForm() {
         const establishment = json.data;
 
         if (cancelled) return;
+        console.log("establishment data", establishment )
 
         setName(establishment.name || "");
         setSlug(establishment.slug || "");
@@ -100,6 +118,10 @@ function AddEstablishmentForm() {
         setIsSponsored(establishment.is_sponsored !== undefined ? Boolean(establishment.is_sponsored) : false);
         setInRoll(establishment.in_roll !== undefined ? Boolean(establishment.in_roll) : true);
         setExistingLogoUrl(establishment.logo_url || "");
+        const loadedCuisines = Array.isArray(establishment.cuisines)
+          ? establishment.cuisines.join(", ")
+          : (establishment.cuisines || "");
+        setCuisine(loadedCuisines);
 
         const loadedImages = Array.isArray(establishment.image_paths)
           ? establishment.image_paths.map((url) => ({ id: nextId(), type: "existing", url }))
@@ -304,7 +326,16 @@ function AddEstablishmentForm() {
     const formData = new FormData();
     formData.append("name", name.trim());
     formData.append("slug", slug.trim());
-    if (category.trim()) formData.append("category", category.trim());
+const categoryValue = category.trim();
+if (categoryValue) formData.append("category", categoryValue);
+
+if (categoryValue.toLowerCase() === "restaurant") {
+  const cuisineArray = cuisine
+    .split(",")
+    .map((c) => c.trim())
+    .filter(Boolean);
+  formData.append("cuisine", JSON.stringify(cuisineArray));
+}
     if (branchLocation.trim()) formData.append("branch_location", branchLocation.trim());
     if (description.trim()) formData.append("description", description.trim());
     if (map.trim()) formData.append("map", map.trim());
@@ -313,6 +344,14 @@ function AddEstablishmentForm() {
     formData.append("is_sponsored", isSponsored);
     formData.append("in_roll", inRoll);
     if (logo?.file) formData.append("logo", logo.file);
+
+    if (category === "Restaurant") {
+      const cuisineArray = cuisine
+        .split(",")
+        .map((c) => c.trim())
+        .filter(Boolean);
+      formData.append("cuisine", JSON.stringify(cuisineArray));
+    }
 
     // Build the ordered lists the backend needs to reconstruct final order:
     // - orderedExistingUrls: existing image urls, in their current display order
@@ -435,19 +474,45 @@ function AddEstablishmentForm() {
 
           {/* Category / Branch location */}
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="category" className="block text-sm font-medium text-slate-700">
-                Category
-              </label>
-              <input
-                id="category"
-                type="text"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                placeholder="e.g. cafe, restaurant"
-                className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
-              />
-            </div>
+           <div>
+  <label htmlFor="category" className="block text-sm font-medium text-slate-700">
+    Category
+  </label>
+  <select
+    id="category"
+    value={category}
+    onChange={(e) => {
+      setCategory(e.target.value);
+      if (e.target.value !== "Restaurant") setCuisine("");
+    }}
+    className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
+  >
+    <option value="">Select a category</option>
+    <option value="cafe">Cafe</option>
+      <option value="cafe,bakery">Cafe & Bakery</option>
+      <option value="cafe,restaurant">Cafe & Restaurant</option>
+         <option value="cafe,bakery,restaurant">Cafe, Bakery & Restaurant</option>
+    <option value="restaurant">Restaurant</option>
+  </select>
+</div>
+
+{/* Cuisine (only for Restaurant) */}
+
+  <div>
+    <label htmlFor="cuisine" className="block text-sm font-medium text-slate-700">
+      Cuisine(s)
+    </label>
+    <input
+      id="cuisine"
+      type="text"
+      value={cuisine}
+      onChange={(e) => setCuisine(e.target.value)}
+      placeholder="e.g. chinese, taiwanese, pizza, italian"
+      className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
+    />
+    <p className="mt-1 text-xs text-slate-400">Separate multiple cuisines with commas.</p>
+  </div>
+
             <div>
               <label htmlFor="branch_location" className="block text-sm font-medium text-slate-700">
                 Branch location

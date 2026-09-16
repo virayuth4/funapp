@@ -99,7 +99,7 @@ function ImageCarousel({ images, name, rank, saved, onToggleSave, isSponsored })
     <div className="relative w-full sm:hidden">
       <div
         ref={scrollRef}
-        className="flex w-full snap-x snap-mandatory  overflow-x-auto scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex w-full snap-x snap-mandatory gap-1 overflow-x-auto scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {shown.map((src, i) => (
           <div
