@@ -1,7 +1,281 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
+import { convertPriceRange } from "@/lib/priceRange";
+import { formatLocation } from "@/lib/formatLocation";
+
+/* ---------- Small icons ---------- */
+
+function ArrowIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+    </svg>
+  );
+}
+
+function ClockIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 7v5l3 3" />
+    </svg>
+  );
+}
+
+/* ---------- Rating ---------- */
+
+function BubbleRating({ rating = 0, count = 0 }) {
+  if (!rating) return null;
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+      <span className="text-sm font-medium text-white">{rating.toFixed(1)}</span>
+      <div className="flex items-center gap-0.5">
+        {[1, 2, 3, 4, 5].map((i) => {
+          const fill = Math.max(0, Math.min(1, rating - (i - 1)));
+          return (
+            <div key={i} className="relative h-3.5 w-3.5 rounded-full border border-emerald-600">
+              <div
+                className="absolute inset-0 overflow-hidden rounded-full"
+                style={{ width: `${fill * 100}%` }}
+              >
+                <div className="h-3.5 w-3.5 rounded-full bg-emerald-600" />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {count > 0 && (
+        <span className="text-sm text-gray-600">({count.toLocaleString()})</span>
+      )}
+    </div>
+  );
+}
+
+/* ---------- Mobile: swipeable image strip ---------- */
+
+function ImageCarousel({ images, name, rank }) {
+  const scrollRef = useRef(null);
+  const shown = images.slice(0, 3   );
+
+  return (
+    <div className="relative w-full sm:hidden">
+      <div
+        ref={scrollRef}
+        className="flex w-full snap-x snap-mandatory gap-0.5"
+      >
+        {shown.map((src, i) => (
+          <div
+            key={i}
+            className="relative aspect-[4/5] w-1/3 shrink-0 snap-start overflow-hidden bg-gray-100"
+          >
+            <Image
+              src={src}
+              alt={`${name} photo ${i + 1}`}
+              fill
+              sizes="33vw"
+              className="object-cover"
+              priority={rank === 1 && i === 0}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Desktop: big photo + thumbnail strip ---------- */
+
+function ImageCollage({ images, name, rank }) {
+  const count = images.length;
+  const thumbs = images.slice(1, 4);
+
+  return (
+    <div className="relative hidden h-52 w-72 shrink-0 overflow-hidden rounded-lg bg-gray-100 sm:block">
+      {count <= 1 ? (
+        <div className="relative block h-full w-full">
+          <Image
+            src={images[0]}
+            alt={name}
+            fill
+            sizes="288px"
+            className="object-cover"
+            priority={rank === 1}
+          />
+        </div>
+      ) : (
+        <div className="flex h-full w-full flex-col gap-1">
+          <div className="relative block h-[65%] w-full">
+            <Image
+              src={images[0]}
+              alt={name}
+              fill
+              sizes="288px"
+              className="object-cover"
+              priority={rank === 1}
+            />
+          </div>
+          <div
+            className={`grid h-[calc(35%-0.25rem)] gap-1 ${
+              thumbs.length >= 3 ? "grid-cols-3" : thumbs.length === 2 ? "grid-cols-2" : "grid-cols-1"
+            }`}
+          >
+            {thumbs.map((src, i) => (
+              <div key={i} className="relative block overflow-hidden">
+                <Image
+                  src={src}
+                  alt={`${name} photo ${i + 2}`}
+                  fill
+                  sizes="96px"
+                  className="object-cover"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---------- One establishment row ---------- */
+
+function CafeRow({ rank, cafe, accent, onClick }) {
+  const images = cafe.image_paths?.length ? cafe.image_paths : [cafe.logo_url];
+  const hasTags = Array.isArray(cafe.tags) && cafe.tags.length > 0;
+
+  const jpy = convertPriceRange(cafe.price_range, "JPY");
+  const cny = convertPriceRange(cafe.price_range, "CNY");
+
+  const header = (
+    <>
+      <div className="flex items-start justify-between gap-2 px-4 sm:px-0">
+        <h2 className="text-base font-bold leading-snug text-white sm:text-lg">
+          {rank ? `${rank}. ` : ""}
+          {cafe.name}
+        </h2>
+
+        {accent && (
+          <span
+            className="shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+            style={{ color: accent.color, borderColor: `${accent.color}40` }}
+          >
+            {accent.name}
+          </span>
+        )}
+      </div>
+
+      <div className="mt-1 px-4 sm:px-0">
+        <BubbleRating rating={cafe.rating} count={cafe.review_count} />
+      </div>
+
+      <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 px-4 text-xs text-white sm:px-0 sm:text-sm">
+        {cafe.category && <span className="capitalize">{cafe.category}</span>}
+        {cafe.branch_location && (
+          <>
+            <span className="text-gray-300">·</span>
+            <span className="truncate">{formatLocation(cafe.branch_location)}</span>
+          </>
+        )}
+        {cafe.hours_note && (
+          <>
+            <span className="text-gray-300">·</span>
+            <span className="flex items-center gap-1 text-rose-600">
+              <ClockIcon className="h-3.5 w-3.5" />
+              {cafe.hours_note}
+            </span>
+          </>
+        )}
+      </div>
+
+      {cafe.price_range && (
+        <div className="mt-1.5 px-4 text-xs text-white sm:px-0">
+          <div className="flex flex-wrap items-center gap-x-2">
+            <span>USD ${cafe.price_range}</span>
+            {cny && (
+              <>
+                <span className="text-gray-300">|</span>
+                <span>
+                  CNY ¥{cny.min}-{cny.max}
+                </span>
+              </>
+            )}
+            {jpy && (
+              <>
+                <span className="text-gray-300">|</span>
+                <span>
+                  JPY ¥{jpy.min}-{jpy.max}
+                </span>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") onClick();
+      }}
+      className="group flex cursor-pointer flex-col gap-3 border-b border-gray-100 py-4 transition-colors  sm:flex-row sm:items-center sm:gap-5 sm:rounded-lg sm:border sm:border-gray-100 sm:px-4 sm:py-4"
+    >
+      {/* Mobile header */}
+      <div className="sm:hidden">{header}</div>
+
+      <ImageCarousel images={images} name={cafe.name} rank={rank} />
+      <ImageCollage images={images} name={cafe.name} rank={rank} />
+
+      {/* Main content */}
+      <div className="min-w-0 flex-1">
+        <div className="hidden sm:block">{header}</div>
+
+        <div className="mt-2 space-y-1.5 px-4 sm:mt-3 sm:px-0">
+          {cafe.reviews?.length ? (
+            cafe.reviews.slice(0, 2).map((r, i) => (
+              <p key={i} className="line-clamp-1 text-xs italic text-gray-600 sm:text-sm">
+                &ldquo;{r}&rdquo;
+              </p>
+            ))
+          ) : cafe.description ? (
+            <p className="line-clamp-2 text-xs  text-white sm:text-sm">
+              {cafe.description}
+            </p>
+          ) : null}
+
+          {hasTags && (
+            <div className="flex flex-wrap gap-1 pt-0.5">
+              {cafe.tags.slice(0, 6).map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded border border-gray-200 px-1.5 py-0.5 text-[10px] text-gray-500"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Desktop affordance, opens the same detail modal as the row click */}
+      {/* <div className="hidden shrink-0 items-center pr-1 sm:flex">
+        <span className="flex items-center gap-1 rounded-md border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 shadow-sm group-hover:bg-gray-50">
+          Details
+          <ArrowIcon className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+        </span>
+      </div> */}
+    </div>
+  );
+}
+
+/* ---------- List + submit modal ---------- */
 
 export default function CafeListView({
   cafes = [],
@@ -13,18 +287,18 @@ export default function CafeListView({
 
   return (
     <>
-      <div className="w-full max-w-3xl mx-auto flex flex-col mt-6">
-        <div className="flex items-center justify-between mb-3 px-1">
-          <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-500">
-            All Cafes
+      <div className="mx-auto mt-6 flex w-full max-w-3xl flex-col">
+        <div className="mb-3 flex items-center justify-between px-1 px-4">
+          <span className="text-[10px] font-mono uppercase tracking-wider text-gray-500">
+            All 
           </span>
           <button
             type="button"
             onClick={() => setIsSubmitModalOpen(true)}
-            className="text-[11px] font-mono text-neutral-400 hover:text-amber-400 transition-colors flex items-center gap-1 group cursor-pointer"
+            className="group flex cursor-pointer items-center gap-1 text-[11px] font-mono text-gray-500 transition-colors hover:text-amber-600"
           >
-            <span>Can&apos;t find your favorite cafe?</span>
-            <span className="text-amber-500/90 group-hover:underline font-semibold">
+            <span>Can&apos;t find your favorite place?</span>
+            <span className="font-semibold text-amber-600 group-hover:underline">
               Submit them →
             </span>
           </button>
@@ -32,12 +306,12 @@ export default function CafeListView({
 
         {cafes.length === 0 ? (
           <div className="w-full py-10 text-center">
-            <p className="text-xs font-mono uppercase tracking-wider text-neutral-600">
-              No cafes match this filter
+            <p className="text-xs font-mono uppercase tracking-wider text-gray-400">
+              No establishments match this filter
             </p>
           </div>
         ) : (
-          <div className="flex flex-col gap-2.5">
+          <div className="flex flex-col gap-2 sm:gap-3">
             {cafes.map((cafe, idx) => {
               const accent = accentMap[cafe.accent] || defaultAccent;
               return (
@@ -107,47 +381,41 @@ function SubmitCafeModal({ onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <div 
-        className="relative w-full max-w-md bg-neutral-900 border border-neutral-800 rounded-xl p-6 shadow-2xl"
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+      <div
+        className="relative w-full max-w-md rounded-xl border border-gray-200 bg-white p-6 shadow-2xl"
         role="dialog"
         aria-modal="true"
       >
         <button
           onClick={onClose}
           disabled={loading}
-          className="absolute top-4 right-4 text-neutral-500 hover:text-neutral-300 text-sm font-mono cursor-pointer"
+          className="absolute right-4 top-4 cursor-pointer text-sm font-mono text-gray-400 hover:text-gray-600"
         >
           ✕
         </button>
 
-        <h3 className="text-base font-bold text-neutral-100">
-          Suggest a Cafe
-        </h3>
-        <p className="text-xs text-neutral-400 mt-1 mb-5">
+        <h3 className="text-base font-bold text-gray-900">Suggest a Cafe or Restaurant</h3>
+        <p className="mb-5 mt-1 text-xs text-gray-500">
           Know a great spot we missed? Drop the details below and we will check it out.
         </p>
 
         {status === "success" ? (
           <div className="py-8 text-center">
-            <p className="text-sm font-medium text-amber-400">
-              Thanks for the recommendation!
-            </p>
-            <p className="text-xs text-neutral-500 mt-1">
-              Closing window...
-            </p>
+            <p className="text-sm font-medium text-amber-600">Thanks for the recommendation!</p>
+            <p className="mt-1 text-xs text-gray-400">Closing window...</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             {status === "error" && (
-              <p className="text-xs text-red-400 bg-red-950/40 border border-red-900/50 p-2 rounded">
+              <p className="rounded border border-red-200 bg-red-50 p-2 text-xs text-red-600">
                 Could not send request. Please try again.
               </p>
             )}
 
             <div>
-              <label className="block text-[11px] font-mono uppercase tracking-wider text-neutral-400 mb-1.5">
-                Cafe Name <span className="text-amber-500">*</span>
+              <label className="mb-1.5 block text-[11px] font-mono uppercase tracking-wider text-gray-500">
+                Cafe/Restaurant Name <span className="text-amber-600">*</span>
               </label>
               <input
                 type="text"
@@ -155,16 +423,14 @@ function SubmitCafeModal({ onClose }) {
                 disabled={loading}
                 placeholder="e.g. Blue Bottle Coffee"
                 value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                className="w-full bg-neutral-950 border border-neutral-800 rounded-md px-3 py-2 text-xs text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-amber-500/50 disabled:opacity-50"
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-xs text-gray-900 placeholder-gray-400 focus:border-amber-500 focus:outline-none disabled:opacity-50"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-mono uppercase tracking-wider text-neutral-400 mb-1.5">
-                Location / Neighborhood <span className="text-amber-500">*</span>
+              <label className="mb-1.5 block text-[11px] font-mono uppercase tracking-wider text-gray-500">
+                Location / Neighborhood <span className="text-amber-600">*</span>
               </label>
               <input
                 type="text"
@@ -172,15 +438,13 @@ function SubmitCafeModal({ onClose }) {
                 disabled={loading}
                 placeholder="e.g. BKK, TTP, TK, IFL"
                 value={formData.location}
-                onChange={(e) =>
-                  setFormData({ ...formData, location: e.target.value })
-                }
-                className="w-full bg-neutral-950 border border-neutral-800 rounded-md px-3 py-2 text-xs text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-amber-500/50 disabled:opacity-50"
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-xs text-gray-900 placeholder-gray-400 focus:border-amber-500 focus:outline-none disabled:opacity-50"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-mono uppercase tracking-wider text-neutral-400 mb-1.5">
+              <label className="mb-1.5 block text-[11px] font-mono uppercase tracking-wider text-gray-500">
                 Cafe Instagram Handle
               </label>
               <input
@@ -188,26 +452,24 @@ function SubmitCafeModal({ onClose }) {
                 disabled={loading}
                 placeholder="@cafename"
                 value={formData.instagram}
-                onChange={(e) =>
-                  setFormData({ ...formData, instagram: e.target.value })
-                }
-                className="w-full bg-neutral-950 border border-neutral-800 rounded-md px-3 py-2 text-xs text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-amber-500/50 disabled:opacity-50"
+                onChange={(e) => setFormData({ ...formData, instagram: e.target.value })}
+                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-xs text-gray-900 placeholder-gray-400 focus:border-amber-500 focus:outline-none disabled:opacity-50"
               />
             </div>
 
-            <div className="flex items-center justify-end gap-2 mt-2">
+            <div className="mt-2 flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={loading}
-                className="px-3 py-2 rounded-md text-xs font-mono text-neutral-400 hover:text-neutral-200 transition-colors cursor-pointer"
+                className="cursor-pointer rounded-md px-3 py-2 text-xs font-mono text-gray-500 transition-colors hover:text-gray-800"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="px-4 py-2 rounded-md bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-neutral-950 text-xs font-mono font-semibold transition-colors cursor-pointer"
+                className="cursor-pointer rounded-md bg-amber-500 px-4 py-2 text-xs font-mono font-semibold text-white transition-colors hover:bg-amber-400 disabled:opacity-50"
               >
                 {loading ? "Sending..." : "Submit Cafe"}
               </button>
@@ -215,133 +477,6 @@ function SubmitCafeModal({ onClose }) {
           </form>
         )}
       </div>
-    </div>
-  );
-}
-
-function CafeRow({ rank, cafe, accent, onClick }) {
-  const hasRating = typeof cafe.rating === "number";
-  const hasTags = Array.isArray(cafe.tags) && cafe.tags.length > 0;
-
-  return (
-    <button
-      onClick={onClick}
-      style={{ borderLeftColor: accent?.color }}
-      className="group w-full text-left flex gap-4 p-3 rounded-md bg-neutral-900/60 border border-neutral-800/80 border-l-4 hover:bg-neutral-900 hover:border-neutral-700 transition-colors cursor-pointer"
-    >
-      <div className="hidden sm:flex items-start pt-1 shrink-0">
-        <span className="w-6 h-6 flex items-center justify-center rounded bg-neutral-950 border border-neutral-800 text-[10px] font-mono text-neutral-500">
-          {rank}
-        </span>
-      </div>
-
-      <div className="shrink-0">
-        <Image
-          src={cafe.logo_url}
-          alt={cafe.name}
-          width={88}
-          height={88}
-          className="w-20 h-20 sm:w-[88px] sm:h-[88px] rounded-lg object-cover border border-neutral-800"
-        />
-      </div>
-
-      <div className="min-w-0 flex-1 flex flex-col justify-center gap-1">
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="text-sm font-bold text-neutral-100 truncate group-hover:text-amber-400 transition-colors">
-            {cafe.name}
-          </h3>
-          <span
-            className="shrink-0 text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border"
-            style={{ color: accent?.color, borderColor: `${accent?.color}40` }}
-          >
-            {accent?.name}
-          </span>
-        </div>
-
-        <p className="text-[11px] text-neutral-500 truncate">
-          {cafe.branch_location}
-          {cafe.category ? ` · ${cafe.category}` : ""}
-        </p>
-
-        {cafe.description && (
-          <p className="text-[11px] text-neutral-400 line-clamp-2">
-            {cafe.description}
-          </p>
-        )}
-
-        <div className="flex items-center gap-3 mt-0.5">
-          {hasRating && (
-            <div className="flex items-center gap-1">
-              <Stars value={cafe.rating} />
-              <span className="text-[11px] font-semibold text-neutral-300">
-                {cafe.rating.toFixed(2)}
-              </span>
-              {typeof cafe.review_count === "number" && (
-                <span className="text-[10px] text-neutral-600">
-                  ({cafe.review_count})
-                </span>
-              )}
-            </div>
-          )}
-
-          {cafe.price_range && (
-            <span className="text-[11px] text-neutral-400">
-              {cafe.price_range}
-            </span>
-          )}
-        </div>
-
-        {hasTags && (
-          <div className="flex flex-wrap gap-1 mt-1">
-            {cafe.tags.slice(0, 6).map((tag) => (
-              <span
-                key={tag}
-                className="text-[9px] text-neutral-500 border border-neutral-800 rounded px-1.5 py-0.5"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="hidden sm:flex items-center pl-1 shrink-0">
-        <span className="text-neutral-600 group-hover:text-amber-400 text-sm transition-colors">
-          →
-        </span>
-      </div>
-    </button>
-  );
-}
-
-function Stars({ value }) {
-  const rounded = Math.round(value * 2) / 2;
-  return (
-    <div className="flex items-center">
-      {Array.from({ length: 5 }).map((_, i) => {
-        const filled = i + 1 <= rounded;
-        const half = !filled && i + 0.5 === rounded;
-        return (
-          <svg
-            key={i}
-            width="11"
-            height="11"
-            viewBox="0 0 20 20"
-            className="mr-[1px]"
-          >
-            <defs>
-              <linearGradient id={`half-${i}`}>
-                <stop offset="50%" stopColor="#fbbf24" />
-                <stop offset="50%" stopColor="#3f3f46" />
-              </linearGradient>
-            </defs>
-            <path
-              d="M10 1.5l2.6 5.4 5.9.7-4.3 4.1 1 5.9L10 14.8l-5.2 2.8 1-5.9L1.5 7.6l5.9-.7L10 1.5z"
-              fill={half ? `url(#half-${i})` : filled ? "#fbbf24" : "#3f3f46"}
-            />
-          </svg>
-        );
-      })}
     </div>
   );
 }

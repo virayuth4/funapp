@@ -23,6 +23,7 @@ function AddEstablishmentForm() {
   const [isSponsored, setIsSponsored] = useState(false);
   const [inRoll, setInRoll] = useState(true);
   const [cuisine, setCuisine] = useState("");
+  const [priceRange, setPriceRange] = useState("");
 
   const [logo, setLogo] = useState(null); // { file, previewUrl }
   const [existingLogoUrl, setExistingLogoUrl] = useState("");
@@ -122,6 +123,7 @@ function AddEstablishmentForm() {
           ? establishment.cuisines.join(", ")
           : (establishment.cuisines || "");
         setCuisine(loadedCuisines);
+        setPriceRange(establishment.price_range || "");
 
         const loadedImages = Array.isArray(establishment.image_paths)
           ? establishment.image_paths.map((url) => ({ id: nextId(), type: "existing", url }))
@@ -316,6 +318,7 @@ function AddEstablishmentForm() {
     setExistingLogoUrl("");
     setImages([]);
     setImagesError("");
+    setPriceRange("");
   }
 
   async function handleSubmit(e) {
@@ -352,6 +355,8 @@ if (categoryValue.toLowerCase() === "restaurant") {
         .filter(Boolean);
       formData.append("cuisine", JSON.stringify(cuisineArray));
     }
+
+    if (priceRange.trim()) formData.append("price_range", priceRange.trim());
 
     // Build the ordered lists the backend needs to reconstruct final order:
     // - orderedExistingUrls: existing image urls, in their current display order
@@ -489,6 +494,7 @@ if (categoryValue.toLowerCase() === "restaurant") {
   >
     <option value="">Select a category</option>
     <option value="cafe">Cafe</option>
+    <option value="bakery">Bakery</option>
       <option value="cafe,bakery">Cafe & Bakery</option>
       <option value="cafe,restaurant">Cafe & Restaurant</option>
          <option value="cafe,bakery,restaurant">Cafe, Bakery & Restaurant</option>
@@ -513,7 +519,7 @@ if (categoryValue.toLowerCase() === "restaurant") {
     <p className="mt-1 text-xs text-slate-400">Separate multiple cuisines with commas.</p>
   </div>
 
-            <div>
+  <div>
               <label htmlFor="branch_location" className="block text-sm font-medium text-slate-700">
                 Branch location
               </label>
@@ -526,7 +532,24 @@ if (categoryValue.toLowerCase() === "restaurant") {
                 className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
               />
             </div>
+
+            <div>
+              <label htmlFor="price_range" className="block text-sm font-medium text-slate-700">
+                Price Range
+              </label>
+              <input
+                id="price_range"
+                type="text"
+                value={priceRange}
+                onChange={(e) => setPriceRange(e.target.value)}
+                placeholder="e.g. Cheap, Medium,"
+                className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
+              />
+            </div>
+          
           </div>
+
+          
 
           {/* Description */}
           <div>
