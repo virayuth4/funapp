@@ -24,6 +24,8 @@ function AddEstablishmentForm() {
   const [inRoll, setInRoll] = useState(true);
   const [cuisine, setCuisine] = useState("");
   const [priceRange, setPriceRange] = useState("");
+  const [tags, setTags] = useState("");
+  const [establishYear, setEstablishYear] = useState("")
 
   const [logo, setLogo] = useState(null); // { file, previewUrl }
   const [existingLogoUrl, setExistingLogoUrl] = useState("");
@@ -53,21 +55,9 @@ function AddEstablishmentForm() {
 
   const totalImageCount = images.length;
 
-  function parseCuisineInput(raw, category) {
-  if (!category || category.trim().toLowerCase() !== 'restaurant') return null;
-  if (!raw) return null;
 
-  let list;
-  try {
-    const parsed = JSON.parse(raw);
-    list = Array.isArray(parsed) ? parsed : String(raw).split(',');
-  } catch {
-    list = String(raw).split(',');
-  }
 
-  const cleaned = list.map((c) => String(c).trim().toLowerCase()).filter(Boolean);
-  return cleaned.length ? cleaned : null;
-}
+
 
   // Auto-generate slug from name until the user edits slug manually
   function generateSlug(text) {
@@ -129,6 +119,10 @@ function AddEstablishmentForm() {
           ? establishment.image_paths.map((url) => ({ id: nextId(), type: "existing", url }))
           : [];
         setImages(loadedImages);
+        const loadedTags = Array.isArray(establishment.tags)
+          ? establishment.tags.join(", ")
+          : (establishment.tags || "");
+        setTags(loadedTags);
 
         setStatus("idle");
       } catch (err) {
@@ -319,6 +313,7 @@ function AddEstablishmentForm() {
     setImages([]);
     setImagesError("");
     setPriceRange("");
+    setTags("");
   }
 
   async function handleSubmit(e) {
@@ -332,13 +327,9 @@ function AddEstablishmentForm() {
 const categoryValue = category.trim();
 if (categoryValue) formData.append("category", categoryValue);
 
-if (categoryValue.toLowerCase() === "restaurant") {
-  const cuisineArray = cuisine
-    .split(",")
-    .map((c) => c.trim())
-    .filter(Boolean);
-  formData.append("cuisine", JSON.stringify(cuisineArray));
-}
+
+
+
     if (branchLocation.trim()) formData.append("branch_location", branchLocation.trim());
     if (description.trim()) formData.append("description", description.trim());
     if (map.trim()) formData.append("map", map.trim());
@@ -348,15 +339,21 @@ if (categoryValue.toLowerCase() === "restaurant") {
     formData.append("in_roll", inRoll);
     if (logo?.file) formData.append("logo", logo.file);
 
-    if (category === "Restaurant") {
-      const cuisineArray = cuisine
-        .split(",")
-        .map((c) => c.trim())
-        .filter(Boolean);
-      formData.append("cuisine", JSON.stringify(cuisineArray));
-    }
+    
+ const cuisineArray = cuisine
+  .split(",")
+  .map((c) => c.trim())
+  .filter(Boolean);
+if (cuisineArray.length) formData.append("cuisine", JSON.stringify(cuisineArray));
+    
+    
 
     if (priceRange.trim()) formData.append("price_range", priceRange.trim());
+    const tagsArray = tags
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean);
+  if (tagsArray.length) formData.append("tags", JSON.stringify(tagsArray));
 
     // Build the ordered lists the backend needs to reconstruct final order:
     // - orderedExistingUrls: existing image urls, in their current display order
@@ -502,7 +499,7 @@ if (categoryValue.toLowerCase() === "restaurant") {
   </select>
 </div>
 
-{/* Cuisine (only for Restaurant) */}
+
 
   <div>
     <label htmlFor="cuisine" className="block text-sm font-medium text-slate-700">
@@ -532,6 +529,21 @@ if (categoryValue.toLowerCase() === "restaurant") {
                 className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
               />
             </div>
+
+            <div>
+  <label htmlFor="tags" className="block text-sm font-medium text-slate-700">
+    Tags
+  </label>
+  <input
+    id="tags"
+    type="text"
+    value={tags}
+    onChange={(e) => setTags(e.target.value)}
+    placeholder="e.g. vegan-friendly, late-night, outdoor-seating"
+    className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
+  />
+  <p className="mt-1 text-xs text-slate-400">Separate multiple tags with commas.</p>
+</div>
 
             <div>
               <label htmlFor="price_range" className="block text-sm font-medium text-slate-700">

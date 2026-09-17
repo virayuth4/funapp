@@ -6,7 +6,7 @@ export default async function sitemap() {
   const baseUrl = 'https://eatdoko.com';
 
   const locationPages = Object.keys(CAFE_LOCATIONS).map((slug) => ({
-    url: `${baseUrl}/best-cafe/${slug}`,
+    url: `${baseUrl}/best-cafes/${slug}`,
     lastModified: new Date(),
     changeFrequency: 'weekly',
     priority: slug === 'phnom-penh' ? 1.0 : 0.8,

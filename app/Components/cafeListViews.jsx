@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useMemo } from "react";
 import Image from "next/image";
 import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
 import { convertPriceRange } from "@/lib/priceRange";
@@ -83,6 +83,15 @@ function BubbleRating({ rating = 0, count = 0 }) {
       )}
     </div>
   );
+}
+
+function shuffleArray(arr) {
+  const result = [...arr];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
 }
 
 /* ---------- Mobile: swipeable image strip ---------- */
@@ -355,6 +364,8 @@ export default function CafeListView({
   const [isSubmitModalOpen, setIsSubmitModalOpen] =
     useState(false);
 
+    const shuffledCafes = useMemo(() => shuffleArray(cafes), [cafes]);
+
   return (
     <>
       <div className="mx-auto mt-6 flex w-full max-w-3xl flex-col">
@@ -378,7 +389,7 @@ export default function CafeListView({
           </button>
         </div>
 
-        {cafes.length === 0 ? (
+    {shuffledCafes.length === 0 ? (
           <div className="w-full py-10 text-center">
             <p className="text-xs font-mono uppercase tracking-wider text-gray-400">
               No establishments match this filter
@@ -386,7 +397,7 @@ export default function CafeListView({
           </div>
         ) : (
           <div className="flex flex-col gap-2 sm:gap-3">
-            {cafes.map((cafe, idx) => {
+            {shuffledCafes.map((cafe, idx) => {
               const accent =
                 accentMap[cafe.accent] || defaultAccent;
 
