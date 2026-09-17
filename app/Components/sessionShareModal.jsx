@@ -56,7 +56,7 @@ export default function SessionShareModal({ isOpen, onClose, sessionId, sessionU
           Spin together
         </h2>
         <p className="text-xs text-neutral-400 mb-5">
-          Share this link — everyone who opens it will see the same spin land on the same cafe.
+          Share this link — everyone who opens it will see the same spin land on the same cafe/restaurant.
         </p>
 
         <div className="mb-2">

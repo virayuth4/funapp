@@ -587,7 +587,7 @@ function SubmitCafeModal({ open, onClose }) {
                 <input
                   type="text"
                   disabled={loading}
-                  placeholder="@cafename"
+                  placeholder="@eatdoko.kh"
                   value={formData.instagram}
                   onChange={(e) =>
                     setFormData({
