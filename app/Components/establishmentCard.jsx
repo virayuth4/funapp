@@ -3,6 +3,10 @@
 
 import { useState, useRef } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
+import PriceRangeDisplay from './priceRangeDisplay';
+import { formatLocation } from '@/lib/formatLocation';
+import TagList from './tagDisplay';
 
 function BubbleRating({ rating = 0, count = 0 }) {
   if (!rating) return null;
@@ -68,6 +72,7 @@ function SavedButton({ saved, onToggle, className = '' }) {
       type="button"
       onClick={(e) => {
         e.preventDefault();
+        e.stopPropagation();
         onToggle();
       }}
       aria-label="Save"
@@ -99,7 +104,7 @@ function ImageCarousel({ images, name, rank, saved, onToggleSave, isSponsored })
     <div className="relative w-full sm:hidden">
       <div
         ref={scrollRef}
-        className="flex w-full snap-x snap-mandatory gap-1 overflow-x-auto scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex w-full snap-x snap-mandatory gap-0.5 overflow-x-auto scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {shown.map((src, i) => (
           <div
@@ -114,7 +119,6 @@ function ImageCarousel({ images, name, rank, saved, onToggleSave, isSponsored })
               className="object-cover"
               priority={rank === 1 && i === 0}
             />
-          
           </div>
         ))}
       </div>
@@ -148,7 +152,7 @@ function ImageCollage({ images, name, rank, saved, onToggleSave, isSponsored }) 
           />
         </div>
       ) : (
-        <div className="flex h-full w-full flex-col gap-1">
+        <div className="flex h-full w-full flex-col gap-0.5">
           <div className="relative block h-[65%] w-full">
             <Image
               src={images[0]}
@@ -160,7 +164,7 @@ function ImageCollage({ images, name, rank, saved, onToggleSave, isSponsored }) 
             />
           </div>
           <div
-            className={`grid h-[calc(35%-0.25rem)] gap-1 ${
+            className={`grid h-[calc(35%-0.25rem)] gap-0.5 ${
               thumbs.length >= 3 ? 'grid-cols-3' : thumbs.length === 2 ? 'grid-cols-2' : 'grid-cols-1'
             }`}
           >
@@ -197,62 +201,60 @@ export default function EstablishmentCard({ cafe, rank }) {
     ? `https://www.google.com/maps/search/?api=1&query=${cafe.latitude},${cafe.longitude}`
     : `https://www.google.com/maps/search/?api=1&query=${mapQuery}`;
 
+  // Detail page route — assumes /{category}/{slug}. Adjust if your actual
+  // routes differ (e.g. all establishments live under /place/[slug]).
+  const detailHref = `/establishment/${cafe.slug}`;
+
   const header = (
-    <>
-      <div className="flex items-start justify-between gap-2 px-4">
-        <h2 className="text-base font-bold leading-snug text-gray-900 sm:text-lg">
-          {rank ? `${rank}. ` : ''}
-          {cafe.name}
-        </h2>
+  <>
+    <div className="flex items-start justify-between gap-2 px-4">
+      <h2 className="text-base font-bold leading-snug text-gray-900 sm:text-lg">
+        {rank ? `${rank}. ` : ''}
+        {cafe.name}
+      </h2>
+    </div>
 
-        <a
-          href={mapUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex shrink-0 items-center gap-1 rounded-md border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 active:scale-95"
-        >
-          <MapPinIcon className="h-3.5 w-3.5 text-rose-500" />
-          Map
-        </a>
-      </div>
+    <div className="mt-1">
+      <BubbleRating rating={cafe.rating} count={cafe.review_count} />
+    </div>
 
-      <div className="mt-1">
-        <BubbleRating rating={cafe.rating} count={cafe.review_count} />
-      </div>
-
-      <div className="px-4 mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-gray-600 sm:text-sm">
-        {cafe.category && (
-          <span className="flex items-center gap-1 capitalize">
-            {cafe.category}
+    <div className="px-4 mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-gray-600 sm:text-sm">
+      {cafe.category && (
+        <span className="flex items-center  capitalize">
+          <span className="truncate">{formatLocation(cafe.branch_location)}</span>
+        </span>
+      )}
+     
+      {cafe.hours_note && (
+        <>
+          <span className="text-gray-300">·</span>
+          <span className="flex items-center gap-1 text-rose-600">
+            <ClockIcon className="h-3.5 w-3.5" />
+            {cafe.hours_note}
           </span>
-        )}
-        {cafe.branch_location && (
-          <>
-            <span className="text-gray-300">·</span>
-            <span className="truncate">{cafe.branch_location}</span>
-          </>
-        )}
-        {cafe.price_range && (
-          <>
-            <span className="text-gray-300">·</span>
-            <span>{cafe.price_range}</span>
-          </>
-        )}
-        {cafe.hours_note && (
-          <>
-            <span className="text-gray-300">·</span>
-            <span className="flex items-center gap-1 text-rose-600">
-              <ClockIcon className="h-3.5 w-3.5" />
-              {cafe.hours_note}
-            </span>
-          </>
-        )}
-      </div>
-    </>
-  );
+        </>
+      )}
+    </div>
+
+   <div className="px-4 space-y-1.5 sm:mt-3">
+  {cafe.price_range && (
+    <p className="text-xs text-gray-600">
+      <PriceRangeDisplay priceRange={cafe.price_range} />
+    </p>
+  )}
+</div>
+
+<div className="px-4">
+  <hr className="mt-2 border-t border-gray-100" />
+</div>
+  </>
+);
 
   return (
-    <div className="flex flex-col gap-3 border-b border-gray-100 py-4 sm:flex-row sm:gap-5 sm:border-0 sm:py-6">
+    <Link
+      href={detailHref}
+      className="flex flex-col gap-3 border-b border-gray-100 py-4 sm:flex-row sm:gap-5 sm:border-0 sm:py-6"
+    >
       {/* Mobile top section */}
       <div className="sm:hidden">{header}</div>
 
@@ -285,10 +287,18 @@ export default function EstablishmentCard({ cafe, rank }) {
               </p>
             ))
           ) : cafe.description ? (
-            <p className="px-4 line-clamp-2 text-xs italic text-gray-600 sm:text-sm">{cafe.description}</p>
+            <p className="px-4 line-clamp-2 text-xs  text-gray-600 sm:text-sm">{cafe.description}</p>
           ) : null}
         </div>
+
+           <div className="mt-2 space-y-1.5 sm:mt-3 mx-4">
+                <TagList tags={cafe.tags} className="pt-0.5" />
+
+
+           </div>
+         
+      
       </div>
-    </div>
+    </Link>
   );
 }

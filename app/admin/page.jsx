@@ -14,6 +14,7 @@ export default function AdminEstablishmentsPage() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeCategory, setActiveCategory] = useState("all");
 
   useEffect(() => {
     const fetchEstablishments = async () => {
@@ -106,6 +107,12 @@ export default function AdminEstablishmentsPage() {
     return [...known, ...leftover];
   }, [normalizedCategories, groupedByCategory]);
 
+  // Sections filtered down to whichever category toggle is active.
+  const visibleSections = useMemo(() => {
+    if (activeCategory === "all") return sections;
+    return sections.filter((section) => section.key === activeCategory);
+  }, [sections, activeCategory]);
+
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
@@ -121,6 +128,53 @@ export default function AdminEstablishmentsPage() {
           + Add New
         </button>
       </div>
+
+      {!loading && !error && sections.length > 0 && (
+        <div className="mb-6 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveCategory("all")}
+            className={`cursor-pointer rounded-full px-3 py-1.5 text-xs font-mono font-semibold uppercase tracking-wider transition-colors ${
+              activeCategory === "all"
+                ? "bg-amber-500 text-white"
+                : "border border-gray-300 text-gray-600 hover:border-amber-500 hover:text-amber-600"
+            }`}
+          >
+            All
+            <span
+              className={`ml-1.5 ${
+                activeCategory === "all" ? "text-amber-100" : "text-gray-400"
+              }`}
+            >
+              {establishments.length}
+            </span>
+          </button>
+
+          {sections.map((section) => (
+            <button
+              key={section.key}
+              type="button"
+              onClick={() => setActiveCategory(section.key)}
+              className={`cursor-pointer rounded-full px-3 py-1.5 text-xs font-mono font-semibold uppercase tracking-wider transition-colors ${
+                activeCategory === section.key
+                  ? "bg-amber-500 text-white"
+                  : "border border-gray-300 text-gray-600 hover:border-amber-500 hover:text-amber-600"
+              }`}
+            >
+              {section.label}
+              <span
+                className={`ml-1.5 ${
+                  activeCategory === section.key
+                    ? "text-amber-100"
+                    : "text-gray-400"
+                }`}
+              >
+                {section.items.length}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {loading && (
         <p className="text-xs font-mono uppercase tracking-wider text-gray-400">
@@ -141,7 +195,7 @@ export default function AdminEstablishmentsPage() {
       )}
 
       <div className="flex flex-col gap-8">
-        {sections.map((section) => (
+        {visibleSections.map((section) => (
           <div key={section.key}>
             <div className="mb-3 flex items-center gap-2">
               <h2 className="text-xs font-mono font-semibold uppercase tracking-wider text-gray-500">

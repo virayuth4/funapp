@@ -8,7 +8,7 @@ export default function Navigation() {
 
   // Normalize the path by removing trailing slashes (e.g., "//" or "/en/")
   const normalizedPath = pathname?.replace(/\/$/, "") || "/";
-  
+
   if (normalizedPath === "/happy-potato") return null;
 
   const isHome = normalizedPath === "/";
@@ -18,13 +18,24 @@ export default function Navigation() {
       <div className="flex items-center justify-between p-4 md:px-24">
         <Link
           href="/"
-         className={`flex items-center gap-2 text-sm font-bold tracking-wide transition-colors ${
-          isHome
-            ? "!text-white hover:!text-amber-400"
-            : "!text-neutral-900 hover:!text-amber-500"
-        }`}
+          className={`flex items-center gap-2 text-sm font-bold tracking-wide transition-colors ${
+            isHome
+              ? "!text-white hover:!text-amber-400"
+              : "!text-neutral-900 hover:!text-amber-500"
+          }`}
         >
           <span>Eat Doko (Next)?</span>
+        </Link>
+
+        <Link
+          href="/how-we-pick"
+          className={`text-sm font-medium tracking-wide transition-colors ${
+            isHome
+              ? "!text-white hover:!text-amber-400"
+              : "!text-neutral-900 hover:!text-amber-500"
+          }`}
+        >
+          How we pick
         </Link>
       </div>
     </nav>

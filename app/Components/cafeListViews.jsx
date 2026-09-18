@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
 import { convertPriceRange } from "@/lib/priceRange";
 import { formatLocation } from "@/lib/formatLocation";
+import TagList from "./tagDisplay";
 
 /* ---------- Small icons ---------- */
 
@@ -335,18 +336,7 @@ function CafeRow({ rank, cafe, accent, onClick }) {
             </p>
           ) : null}
 
-          {hasTags && (
-            <div className="flex flex-wrap gap-1 pt-0.5">
-              {cafe.tags.slice(0, 6).map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded border border-gray-200 px-1.5 py-0.5 text-[10px] text-gray-500"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
+         <TagList tags={cafe.tags} className="pt-0.5" />
         </div>
       </div>
     </div>
@@ -389,7 +379,7 @@ export default function CafeListView({
           </button>
         </div>
 
-    {shuffledCafes.length === 0 ? (
+    {cafes.length === 0 ? (
           <div className="w-full py-10 text-center">
             <p className="text-xs font-mono uppercase tracking-wider text-gray-400">
               No establishments match this filter
@@ -397,7 +387,7 @@ export default function CafeListView({
           </div>
         ) : (
           <div className="flex flex-col gap-2 sm:gap-3">
-            {shuffledCafes.map((cafe, idx) => {
+            {cafes.map((cafe, idx) => {
               const accent =
                 accentMap[cafe.accent] || defaultAccent;
 

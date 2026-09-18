@@ -140,6 +140,7 @@ useEffect(() => {
       });
       if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
       const json = await res.json();
+      console.log("Data", json)
 
       setCafes(Array.isArray(json.data) ? json.data : []);
       setAvailableCategories(Array.isArray(json.categories) ? json.categories : []);

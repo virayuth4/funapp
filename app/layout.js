@@ -20,7 +20,7 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: "Eat Doko (Where)? | Random Cafe & Restaurant Picker",
+  title: "EatDoko | Random Cafe & Restaurant Picker",
   description:
     "Can't decide where to eat? Randomly select a cafe or restuarants, so you can stop scrolling and start eating.",
 };
