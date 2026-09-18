@@ -41,6 +41,16 @@ export default function CafeDetailModal({
     ? entity.image_paths.filter(Boolean).slice(0, 10)
     : [];
 
+  const galleryVideos = Array.isArray(entity.video_urls)
+    ? entity.video_urls.filter(Boolean).slice(0, 3)
+    : [];
+
+  // Videos first, then images — single ordered list the carousel/lightbox walk through
+  const gallerySlides = [
+    ...galleryVideos.map((src) => ({ type: "video", src })),
+    ...galleryImages.map((src) => ({ type: "image", src })),
+  ];
+
   const scrollToSlide = (idx) => {
     const el = scrollRef.current;
     if (!el) return;
@@ -160,7 +170,7 @@ export default function CafeDetailModal({
           </div>
 
          {/* Photo Carousel */}
-{galleryImages.length > 0 && (
+{gallerySlides.length > 0 && (
   <div className="mt-5">
     <div className="relative">
       <div
@@ -169,25 +179,41 @@ export default function CafeDetailModal({
         className="flex overflow-x-auto snap-x snap-mandatory rounded-lg no-scrollbar"
         style={{ scrollbarWidth: "none" }}
       >
-        {galleryImages.map((src, idx) => (
+        {gallerySlides.map((slide, idx) => (
           <button
-            key={`${src}-${idx}`}
+            key={`${slide.src}-${idx}`}
             onClick={() => openLightbox(idx)}
             className="relative w-[75%] aspect-[5/3] shrink-0 snap-center overflow-hidden border border-neutral-800 bg-neutral-900 cursor-pointer rounded-lg mr-2"
           >
-            <Image
-              src={src}
-              alt={`${entity.name} photo ${idx + 1}`}
-              fill
-              sizes="320px"
-              className="object-cover"
-            />
+            {slide.type === "video" ? (
+              <video
+                src={slide.src}
+                muted
+                playsInline
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            ) : (
+              <Image
+                src={slide.src}
+                alt={`${entity.name} photo ${idx + 1}`}
+                fill
+                sizes="320px"
+                className="object-cover"
+              />
+            )}
+            {slide.type === "video" && (
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white">
+                  ▶
+                </div>
+              </div>
+            )}
           </button>
         ))}
       </div>
 
       {/* Navigation arrows */}
-      {galleryImages.length > 1 && (
+        {gallerySlides.length > 1 && (
         <>
           <button
             onClick={() => scrollToSlide(Math.max(activeSlide - 1, 0))}
@@ -201,10 +227,10 @@ export default function CafeDetailModal({
           <button
             onClick={() =>
               scrollToSlide(
-                Math.min(activeSlide + 1, galleryImages.length - 1)
+                Math.min(activeSlide + 1, gallerySlides.length - 1)
               )
             }
-            disabled={activeSlide === galleryImages.length - 1}
+            disabled={activeSlide === gallerySlides.length - 1}
             className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80 disabled:opacity-0 transition-opacity cursor-pointer"
             aria-label="Next photo"
           >
@@ -221,9 +247,9 @@ export default function CafeDetailModal({
     </div>
 
     {/* Dots */}
-    {galleryImages.length > 1 && (
+    {gallerySlides.length > 1 && (
       <div className="flex items-center justify-center gap-1.5 mt-2">
-        {galleryImages.map((_, idx) => (
+        {gallerySlides.map((_, idx) => (
           <button
             key={idx}
             onClick={() => scrollToSlide(idx)}
@@ -336,37 +362,46 @@ export default function CafeDetailModal({
         )}
 
         {/* Lightbox */}
-        {expandedImage !== null && (
-          <Lightbox
-            open
-            close={() => setExpandedImage(null)}
-            index={expandedImage}
-            slides={galleryImages.map((src) => ({ src }))}
-            on={{ view: ({ index }) => setExpandedImage(index) }}
-            animation={{ fade: 250, swipe: 300 }}
-            controller={{ closeOnBackdropClick: true }}
-            styles={{ root: { zIndex: zIndex + 10 } }}
-            render={{
-              controls: () => (
-                <div
-                  className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1.5"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {galleryImages.map((_, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setExpandedImage(idx)}
-                      className={`h-1.5 rounded-full transition-all ${
-                        idx === expandedImage ? "w-4 bg-amber-400" : "w-1.5 bg-white/40"
-                      }`}
-                      aria-label={`Go to photo ${idx + 1}`}
-                    />
-                  ))}
-                </div>
-              ),
-            }}
-          />
-        )}
+      {expandedImage !== null && (
+  <Lightbox
+    open
+    close={() => setExpandedImage(null)}
+    index={expandedImage}
+    slides={gallerySlides.map((slide) =>
+      slide.type === "video"
+        ? {
+            type: "video",
+            width: 1280,
+            height: 720,
+            sources: [{ src: slide.src, type: "video/mp4" }],
+          }
+        : { src: slide.src }
+    )}
+    on={{ view: ({ index }) => setExpandedImage(index) }}
+    animation={{ fade: 250, swipe: 300 }}
+    controller={{ closeOnBackdropClick: true }}
+    styles={{ root: { zIndex: zIndex + 10 } }}
+    render={{
+      controls: () => (
+        <div
+          className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1.5"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {gallerySlides.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setExpandedImage(idx)}
+              className={`h-1.5 rounded-full transition-all ${
+                idx === expandedImage ? "w-4 bg-amber-400" : "w-1.5 bg-white/40"
+              }`}
+              aria-label={`Go to photo ${idx + 1}`}
+            />
+          ))}
+        </div>
+      ),
+    }}
+  />
+)}
       </div>
     </div>
   );

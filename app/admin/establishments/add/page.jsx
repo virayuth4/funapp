@@ -3,6 +3,7 @@ import { useState, useRef, useCallback, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
 const MAX_IMAGES = 10;
+const MAX_VIDEOS = 3;
 
 function AddEstablishmentForm() {
   const searchParams = useSearchParams();
@@ -31,6 +32,7 @@ function AddEstablishmentForm() {
   const [existingLogoUrl, setExistingLogoUrl] = useState("");
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
+  
 
   // Gallery images: a single ordered array mixing existing (already-saved) and
   // new (freshly picked) images, so users can drag to reorder across both.
@@ -44,6 +46,14 @@ function AddEstablishmentForm() {
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
 
+
+  const [videos, setVideos] = useState([]);
+  const [isVideosDragging, setIsVideosDragging] = useState(false);
+  const [videosError, setVideosError] = useState("");
+  const videosInputRef = useRef(null);
+
+  const totalVideoCount = videos.length;
+  
   const idCounter = useRef(0);
   function nextId() {
     idCounter.current += 1;
@@ -69,15 +79,18 @@ function AddEstablishmentForm() {
   }
 
   // Clean up object URLs on unmount
-  useEffect(() => {
-    return () => {
-      if (logo?.previewUrl) URL.revokeObjectURL(logo.previewUrl);
-      images.forEach((img) => {
-        if (img.type === "new" && img.previewUrl) URL.revokeObjectURL(img.previewUrl);
-      });
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [logo, images]);
+useEffect(() => {
+  return () => {
+    if (logo?.previewUrl) URL.revokeObjectURL(logo.previewUrl);
+    images.forEach((img) => {
+      if (img.type === "new" && img.previewUrl) URL.revokeObjectURL(img.previewUrl);
+    });
+    videos.forEach((v) => {
+      if (v.type === "new" && v.previewUrl) URL.revokeObjectURL(v.previewUrl);
+    });
+  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [logo, images, videos]);
 
   // Fetch existing establishment data when in edit mode
   useEffect(() => {
@@ -124,6 +137,11 @@ function AddEstablishmentForm() {
           : (establishment.tags || "");
         setTags(loadedTags);
 
+        const loadedVideos = Array.isArray(establishment.video_urls)
+          ? establishment.video_urls.map((url) => ({ id: nextId(), type: "existing", url }))
+          : [];
+        setVideos(loadedVideos);
+
         setStatus("idle");
       } catch (err) {
         if (cancelled) return;
@@ -138,6 +156,67 @@ function AddEstablishmentForm() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditMode, establishmentId]);
+
+  function addVideoFiles(fileList) {
+  const incoming = Array.from(fileList).filter((f) => f.type.startsWith("video/"));
+  if (!incoming.length) return;
+
+  const availableSlots = MAX_VIDEOS - totalVideoCount;
+  if (availableSlots <= 0) {
+    setVideosError(`You can upload up to ${MAX_VIDEOS} videos.`);
+    return;
+  }
+
+  const accepted = incoming.slice(0, availableSlots);
+  if (incoming.length > accepted.length) {
+    setVideosError(`Only ${availableSlots} more video${availableSlots === 1 ? "" : "s"} can be added (max ${MAX_VIDEOS}).`);
+  } else {
+    setVideosError("");
+  }
+
+  const withPreviews = accepted.map((file) => ({
+    id: nextId(),
+    type: "new",
+    file,
+    previewUrl: URL.createObjectURL(file),
+  }));
+  setVideos((prev) => [...prev, ...withPreviews]);
+}
+
+function removeVideo(id) {
+  setVideos((prev) => {
+    const target = prev.find((v) => v.id === id);
+    if (target?.type === "new" && target.previewUrl) URL.revokeObjectURL(target.previewUrl);
+    return prev.filter((v) => v.id !== id);
+  });
+  setVideosError("");
+}
+
+const handleVideosDrop = useCallback((e) => {
+  e.preventDefault();
+  setIsVideosDragging(false);
+  if (e.dataTransfer?.files?.length) {
+    addVideoFiles(e.dataTransfer.files);
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [videos]);
+
+function handleVideosDragOver(e) {
+  e.preventDefault();
+  setIsVideosDragging(true);
+}
+
+function handleVideosDragLeave(e) {
+  e.preventDefault();
+  setIsVideosDragging(false);
+}
+
+function handleVideosInputChange(e) {
+  if (e.target.files?.length) {
+    addVideoFiles(e.target.files);
+  }
+  e.target.value = "";
+}
 
   function addLogoFile(fileList) {
     const file = Array.from(fileList).find((f) => f.type.startsWith("image/"));
@@ -297,6 +376,9 @@ function AddEstablishmentForm() {
     images.forEach((img) => {
       if (img.type === "new" && img.previewUrl) URL.revokeObjectURL(img.previewUrl);
     });
+    videos.forEach((v) => {
+      if (v.type === "new" && v.previewUrl) URL.revokeObjectURL(v.previewUrl);
+    });
     setName("");
     setSlug("");
     setSlugTouched(false);
@@ -314,6 +396,8 @@ function AddEstablishmentForm() {
     setImagesError("");
     setPriceRange("");
     setTags("");
+    setVideos([]);
+    setVideosError("");
   }
 
   async function handleSubmit(e) {
@@ -324,9 +408,11 @@ function AddEstablishmentForm() {
     const formData = new FormData();
     formData.append("name", name.trim());
     formData.append("slug", slug.trim());
-const categoryValue = category.trim();
-if (categoryValue) formData.append("category", categoryValue);
-
+    const categoryValue = category.trim();
+    if (categoryValue) formData.append("category", categoryValue);
+    const orderedExistingVideoUrls = videos.filter((v) => v.type === "existing").map((v) => v.url);
+    const orderedNewVideoFiles = videos.filter((v) => v.type === "new").map((v) => v.file);
+    orderedNewVideoFiles.forEach((file) => formData.append("videos", file));
 
 
 
@@ -373,10 +459,11 @@ if (cuisineArray.length) formData.append("cuisine", JSON.stringify(cuisineArray)
     orderedNewFiles.forEach((file) => formData.append("images", file));
     formData.append("image_order", JSON.stringify(imageOrder));
 
-    if (isEditMode) {
-      formData.append("existing_logo_url", existingLogoUrl);
-      formData.append("existing_image_paths", JSON.stringify(orderedExistingUrls));
-    }
+ if (isEditMode) {
+  formData.append("existing_logo_url", existingLogoUrl);
+  formData.append("existing_image_paths", JSON.stringify(orderedExistingUrls));
+  formData.append("existing_video_urls", JSON.stringify(orderedExistingVideoUrls));
+}
 
     try {
       const url = isEditMode
@@ -824,6 +911,73 @@ if (cuisineArray.length) formData.append("cuisine", JSON.stringify(cuisineArray)
               </>
             )}
           </div>
+
+          <div>
+  <div className="flex items-baseline justify-between">
+    <label className="block text-sm font-medium text-slate-700">
+      Videos <span className="text-slate-400 font-normal">(optional)</span>
+    </label>
+    <span className="text-xs text-slate-400">
+      {totalVideoCount}/{MAX_VIDEOS}
+    </span>
+  </div>
+
+  <div
+    onDrop={handleVideosDrop}
+    onDragOver={handleVideosDragOver}
+    onDragLeave={handleVideosDragLeave}
+    onClick={() => totalVideoCount < MAX_VIDEOS && videosInputRef.current?.click()}
+    className={`mt-1.5 flex flex-col items-center justify-center rounded-lg border-2 border-dashed px-4 py-8 text-center transition ${
+      totalVideoCount >= MAX_VIDEOS
+        ? "cursor-not-allowed border-slate-200 bg-slate-50 opacity-60"
+        : isVideosDragging
+        ? "cursor-pointer border-slate-500 bg-slate-50"
+        : "cursor-pointer border-slate-300 hover:border-slate-400"
+    }`}
+  >
+    <p className="text-sm text-slate-600">
+      {totalVideoCount >= MAX_VIDEOS ? (
+        <span className="font-medium text-slate-500">Maximum of {MAX_VIDEOS} videos reached</span>
+      ) : (
+        <>
+          <span className="font-medium text-slate-900">Click to upload</span> or drag and drop
+        </>
+      )}
+    </p>
+    <p className="mt-1 text-xs text-slate-400">Up to {MAX_VIDEOS} videos total. MP4, MOV, or WEBM</p>
+    <input
+      ref={videosInputRef}
+      type="file"
+      accept="video/*"
+      multiple
+      onChange={handleVideosInputChange}
+      className="hidden"
+    />
+  </div>
+
+  {videosError && <p className="mt-2 text-xs text-red-600">{videosError}</p>}
+
+  {videos.length > 0 && (
+    <div className="mt-3 grid grid-cols-2 gap-2">
+      {videos.map((v) => (
+        <div key={v.id} className="group relative overflow-hidden rounded-lg border border-slate-200">
+          <video src={v.type === "existing" ? v.url : v.previewUrl} controls className="h-full w-full" />
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              removeVideo(v.id);
+            }}
+            className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-xs text-white opacity-0 transition group-hover:opacity-100"
+            aria-label="Remove video"
+          >
+            ✕
+          </button>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
 
           {/* Toggles */}
           <div className="flex flex-col gap-2">
