@@ -24,8 +24,8 @@ const CARD_ACCENTS = [
   { name: "Signature", color: "#ffd700", bg: "from-amber-400/25 to-transparent", border: "border-yellow-400" },
   { name: "New", color: "#4b69ff", bg: "from-green-600/20 to-transparent", border: "border-green-500" },
   { name: "Staff Favorite", color: "#22d3ee", bg: "from-cyan-500/25 to-transparent", border: "border-cyan-400" },
+  { name: "Hidden Gem", color: "#10b981", bg: "from-emerald-600/20 to-transparent", border: "border-emerald-500" },
 ];
-
 const ACCENT_MAP = Object.fromEntries(CARD_ACCENTS.map((a) => [a.name, a]));
 const DEFAULT_ACCENT = CARD_ACCENTS[0];
 

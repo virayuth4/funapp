@@ -554,7 +554,7 @@ if (cuisineArray.length) formData.append("cuisine", JSON.stringify(cuisineArray)
                 type="text"
                 value={priceRange}
                 onChange={(e) => setPriceRange(e.target.value)}
-                placeholder="e.g. Cheap, Medium,"
+                placeholder="e.g. 10-15 (must be in this format)"
                 className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
               />
             </div>
