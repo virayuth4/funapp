@@ -44,6 +44,23 @@ export default function HomeClient({ initialCafes, initialCategories, initialErr
   const [suggestedSponsors, setSuggestedSponsors] = useState([]);
   const [modalIsList, setModalIsList] = useState(false);
   const [showReviews, setShowReviews] = useState(false);
+  const [isMuted, setIsMuted] = useState(() => {
+  try {
+    return localStorage.getItem("cafeSpinMuted") === "true";
+  } catch {
+    return false;
+  }
+});
+
+const toggleMute = () => {
+  setIsMuted((prev) => {
+    const next = !prev;
+    try {
+      localStorage.setItem("cafeSpinMuted", String(next));
+    } catch {}
+    return next;
+  });
+};
 
   const [reelItems, setReelItems] = useState([]);
   const [translateX, setTranslateX] = useState(0);
@@ -65,6 +82,7 @@ export default function HomeClient({ initialCafes, initialCategories, initialErr
   const [availableCategories, setAvailableCategories] = useState(initialCategories);
   const [isLoadingCafes, setIsLoadingCafes] = useState(!initialCafes?.length);
   const [loadError, setLoadError] = useState(initialError);
+
 
 const leaveSession = useCallback((forced = false) => {
   setSessionId(null);
@@ -427,13 +445,17 @@ useEffect(() => {
 
           if (currentSlot !== lastTickIndexRef.current && currentSlot <= WINNER_INDEX) {
             lastTickIndexRef.current = currentSlot;
+            if (!isMuted) {
             spinSoundsRef.current?.playTickSound(easedProgress);
+          }
           }
 
           if (progress < 1) {
             animationFrameRef.current = requestAnimationFrame(checkTicker);
           } else {
+            if (!isMuted) {
             spinSoundsRef.current?.playRevealSound();
+          }
             setSuggestedSponsors(pickSponsorsFor(chosenWinner));
             setActiveModalItem(chosenWinner);
             addToHistory(chosenWinner);
@@ -663,7 +685,7 @@ const requestSpin = async () => {
 
   return (
     <main className="min-h-screen bg-[#0d0f12] text-neutral-100 flex flex-col items-center relative overflow-hidden select-none">
-      <SpinSounds ref={spinSoundsRef} />
+      <SpinSounds ref={spinSoundsRef}  muted={isMuted} />
       <style jsx global>{`
         @keyframes pulseGlow {
           0%, 100% {
@@ -826,16 +848,38 @@ const requestSpin = async () => {
   </div>
 )}
             
+<div className="mt-4 flex flex-col items-center gap-3">
+  <div className="relative flex items-center justify-center">
+    <button
+      onClick={requestSpin}
+      disabled={isSpinning || availableCafes.length === 0}
+      className="relative px-10 py-3.5 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 bg-[length:200%_200%] hover:from-amber-300 hover:via-amber-400 hover:to-amber-500 active:scale-95 text-black font-extrabold rounded shadow-[0_0_25px_rgba(245,158,11,0.25)] transition-all uppercase tracking-widest text-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:animate-none cursor-pointer border border-amber-300/40 animate-gradient-x animate-pulse-glow overflow-hidden"
+    >
+      <span className="relative z-10">{isSpinning ? "Selecting Cafe..." : "Spin"}</span>
+      <span className="absolute inset-0 -translate-x-full hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-12" />
+    </button>
 
-            <div className="mt-4 flex flex-col items-center gap-3">
-              <button
-                onClick={requestSpin}
-                disabled={isSpinning || availableCafes.length === 0}
-                className="relative px-10 py-3.5 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 bg-[length:200%_200%] hover:from-amber-300 hover:via-amber-400 hover:to-amber-500 active:scale-95 text-black font-extrabold rounded shadow-[0_0_25px_rgba(245,158,11,0.25)] transition-all uppercase tracking-widest text-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:animate-none cursor-pointer border border-amber-300/40 animate-gradient-x animate-pulse-glow overflow-hidden"
-              >
-                <span className="relative z-10">{isSpinning ? "Selecting Cafe..." : "Spin"}</span>
-                <span className="absolute inset-0 -translate-x-full hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-12" />
-              </button>
+    <button
+      onClick={toggleMute}
+      aria-label={isMuted ? "Unmute sound" : "Mute sound"}
+      title={isMuted ? "Unmute sound" : "Mute sound"}
+      className="absolute left-full ml-3 w-10 h-10 flex items-center justify-center rounded-full border border-neutral-700 bg-neutral-900/80 text-neutral-300 hover:text-white hover:border-neutral-500 transition-colors cursor-pointer"
+    >
+      {isMuted ? (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+          <line x1="23" y1="9" x2="17" y2="15" />
+          <line x1="17" y1="9" x2="23" y2="15" />
+        </svg>
+      ) : (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+          <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+        </svg>
+      )}
+    </button>
+  </div>
 
                {/* Session controls */}
    <div className="mb-4">
