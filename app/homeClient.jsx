@@ -816,6 +816,7 @@ const requestSpin = async () => {
                             alt={cafe.name}
                             width={64}
                             height={64}
+                            unoptimized
                             className="w-16 h-16 rounded-lg object-cover border border-neutral-700/60 shadow-md"
                           />
                         </div>
