@@ -38,7 +38,7 @@ const WINNER_INDEX = 50;
 
 export default function HomeClient({ initialCafes, initialCategories, initialError }) {
   const [selectedBranch, setSelectedBranch] = useState("ALL");
-  const [selectedType, setSelectedType] = useState("cafe");
+  const [selectedType, setSelectedType] = useState("bakery");
   const [removedIds, setRemovedIds] = useState([]);
   const [activeModalItem, setActiveModalItem] = useState(null);
   const [isSpinning, setIsSpinning] = useState(false);
@@ -901,7 +901,7 @@ const requestSpin = async () => {
   ) : (
     <button
       onClick={createSession}
-      className="text-xs text-neutral-400 underline hover:text-white cursor-pointer"
+      className="text-xs text-neutral-400 underline hover:text-white cursor-pointer mt-3"
     >
       Click here to spin with friends
     </button>
@@ -932,12 +932,12 @@ const requestSpin = async () => {
   sessionUrl={sessionUrl}
 />
 
-      <CafeListView
-        cafes={availableCafes}
-        accentMap={ACCENT_MAP}
-        defaultAccent={DEFAULT_ACCENT}
-        onSelect={(cafe) => openCafeModal(cafe, true)}
-      />
+        <CafeListView
+          cafes={availableCafes}
+          accentMap={ACCENT_MAP}
+          defaultAccent={DEFAULT_ACCENT}
+          onSelect={(cafe) => openCafeModal(cafe, true)}
+        />
 
       <CafeDetailModal
         key={`cafe-${activeModalItem?.id ?? "none"}`}

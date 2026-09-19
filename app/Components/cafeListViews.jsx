@@ -6,6 +6,7 @@ import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
 import { convertPriceRange } from "@/lib/priceRange";
 import { formatLocation } from "@/lib/formatLocation";
 import TagList from "./tagDisplay";
+import SpinnerImage from "./spinnerImage";
 
 /* ---------- Small icons ---------- */
 
@@ -112,7 +113,7 @@ function ImageCarousel({ images, name, rank }) {
             key={i}
             className="relative aspect-[4/5] w-1/3 shrink-0 snap-start overflow-hidden bg-gray-100"
           >
-            <Image
+            <SpinnerImage
               src={src}
               alt={`${name} photo ${i + 1}`}
               fill
@@ -137,7 +138,7 @@ function ImageCollage({ images, name, rank }) {
     <div className="relative hidden h-52 w-72 shrink-0 overflow-hidden rounded-lg bg-gray-100 sm:block">
       {count <= 1 ? (
         <div className="relative block h-full w-full">
-          <Image
+          <SpinnerImage
             src={images[0]}
             alt={name}
             fill
@@ -149,7 +150,7 @@ function ImageCollage({ images, name, rank }) {
       ) : (
         <div className="flex h-full w-full flex-col gap-1">
           <div className="relative block h-[65%] w-full">
-            <Image
+            <SpinnerImage
               src={images[0]}
               alt={name}
               fill
