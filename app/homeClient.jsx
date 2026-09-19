@@ -46,6 +46,12 @@ export default function HomeClient({ initialCafes, initialCategories, initialErr
   const [showReviews, setShowReviews] = useState(false);
  const [isMuted, setIsMuted] = useState(false);
 
+ const isMutedRef = useRef(false);
+
+useEffect(() => {
+  isMutedRef.current = isMuted;
+}, [isMuted]);
+
 
 
 
@@ -254,7 +260,7 @@ useEffect(() => {
       const matchType =
         selectedType === "ALL" || cafeCategories.includes(selectedType.toLowerCase());
 
-      const notRemoved = !removedIds.includes(cafe.id);
+        const notRemoved = !removedIds.includes(String(cafe.id));
       return matchInRoll && matchBranch && matchType && notRemoved;
     });
   }, [cafes, selectedBranch, selectedType, removedIds]);
@@ -305,6 +311,9 @@ useEffect(() => {
       lastTickIndexRef.current = -1;
     }
   }, [createReel, isSpinning]);
+
+
+
 
   const addToHistory = useCallback((cafe) => {
     const entry = {
@@ -480,7 +489,9 @@ useEffect(() => {
         setIsSpinning(false);
         return;
       }
-      spinSoundsRef.current?.playRevealSound();
+      if (!isMutedRef.current) {
+        spinSoundsRef.current?.playRevealSound();
+      }
       setSuggestedSponsors(pickSponsorsFor(winnerCafe));
       setActiveModalItem(winnerCafe);
       addToHistory(winnerCafe);
@@ -545,20 +556,25 @@ const playSharedSpin = useCallback(
           const currentPos = Math.abs(targetOffset * easedProgress);
           const currentSlot = Math.floor((currentPos + CARD_WIDTH / 2) / TOTAL_SLOT_WIDTH);
 
-          if (currentSlot !== lastTickIndexRef.current && currentSlot <= WINNER_INDEX) {
-            lastTickIndexRef.current = currentSlot;
+        if (currentSlot !== lastTickIndexRef.current && currentSlot <= WINNER_INDEX) {
+          lastTickIndexRef.current = currentSlot;
+          if (!isMutedRef.current) {
             spinSoundsRef.current?.playTickSound(easedProgress);
           }
+        }
 
-          if (progress < 1) {
+
+        if (progress < 1) {
             animationFrameRef.current = requestAnimationFrame(checkTicker);
           } else {
-            spinSoundsRef.current?.playRevealSound();
+            if (!isMutedRef.current) {
+              spinSoundsRef.current?.playRevealSound();
+            }
             setSuggestedSponsors(pickSponsorsFor(winnerCafe));
             setActiveModalItem(winnerCafe);
             addToHistory(winnerCafe);
             setIsSpinning(false);
-            activeSpinRef.current = null; // clear so the next spin can play
+            activeSpinRef.current = null;
           }
         };
 
@@ -578,6 +594,9 @@ useEffect(() => {
     pusher = getPusherClient();
     channel = pusher.subscribe(`session-${sessionId}`);
     channel.bind("spin", (payload) => playSharedSpin(payload));
+    channel.bind("exclude", (payload) => {
+      if (Array.isArray(payload?.excluded_ids)) setRemovedIds(payload.excluded_ids);
+    });
   } catch (err) {
     console.error("Pusher setup failed:", err);
     return;
@@ -585,7 +604,11 @@ useEffect(() => {
 
   fetch(`${process.env.NEXT_PUBLIC_BACKEND}/api/eatdoko/session/${sessionId}`)
     .then((r) => (r.ok ? r.json() : null))
-    .then((state) => { if (state?.spinning) playSharedSpin(state); })
+    .then((state) => {
+      if (!state) return;
+      if (Array.isArray(state.excluded_ids)) setRemovedIds(state.excluded_ids);
+      if (state.spinning) playSharedSpin(state);
+    })
     .catch((err) => console.error("Failed to fetch session state:", err));
 
   return () => {
@@ -606,7 +629,11 @@ const createSession = async () => {
     const res = await fetch(`${base}/api/eatdoko/session/create`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ branch_location: selectedBranch, selected_type: selectedType }),
+      body: JSON.stringify({
+        branch_location: selectedBranch,
+        selected_type: selectedType,
+        excluded_ids: removedIds,
+      }),
     });
     if (!res.ok) throw new Error(`Request failed: ${res.status}`);
 
@@ -670,11 +697,45 @@ const requestSpin = async () => {
   }
 };
 
-  const handleRemoveCafe = (cafeId) => {
-    setRemovedIds((prev) => [...prev, cafeId]);
-    setActiveModalItem(null);
-    setSuggestedSponsors([]);
-  };
+const handleRemoveCafe = async (cafeId) => {
+  const id = String(cafeId);
+  setRemovedIds((prev) => (prev.includes(id) ? prev : [...prev, id])); // optimistic
+  setActiveModalItem(null);
+  setSuggestedSponsors([]);
+
+  if (!sessionId) return;
+
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND}/api/eatdoko/session/${sessionId}/exclude`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cafeId: id }),
+      }
+    );
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data.excluded_ids)) setRemovedIds(data.excluded_ids);
+    }
+  } catch (err) {
+    console.error("Failed to sync exclusion:", err);
+  }
+};
+
+const resetExcluded = async () => {
+  setRemovedIds([]);
+  if (!sessionId) return;
+
+  try {
+    await fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND}/api/eatdoko/session/${sessionId}/exclude/reset`,
+      { method: "POST" }
+    );
+  } catch (err) {
+    console.error("Failed to sync reset:", err);
+  }
+};
 
   const openHistoryEntry = (entry) => {
     const fullCafe = cafes.find((c) => String(c.id) === String(entry.id));
@@ -940,7 +1001,7 @@ const requestSpin = async () => {
                   <span>{removedIds.length} cafe(s) excluded</span>
                   <span>•</span>
                   <button
-                    onClick={() => setRemovedIds([])}
+                    onClick={resetExcluded}
                     className="text-amber-500 underline hover:text-amber-400 cursor-pointer"
                   >
                     Reset excluded
