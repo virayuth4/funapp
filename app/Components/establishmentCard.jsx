@@ -101,7 +101,7 @@ function ImageCarousel({ images, name, rank, saved, onToggleSave, isSponsored })
   const hasOverflow = images.length > 3;
 
   return (
-    <div className="relative w-full sm:hidden">
+    <div className="relative -mx-4 w-[calc(100%+2rem)] sm:hidden">
       <div
         ref={scrollRef}
         className="flex w-full snap-x snap-mandatory gap-0.5 overflow-x-auto scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -207,18 +207,18 @@ export default function EstablishmentCard({ cafe, rank }) {
 
   const header = (
   <>
-    <div className="flex items-start justify-between gap-2 px-4">
+    <div className="flex items-start justify-between gap-2">
       <h2 className="text-base font-bold leading-snug text-gray-900 sm:text-lg">
         {rank ? `${rank}. ` : ''}
         {cafe.name}
       </h2>
     </div>
 
-    <div className="mt-1">
+    {/* <div className="mt-1">
       <BubbleRating rating={cafe.rating} count={cafe.review_count} />
-    </div>
+    </div> */}
 
-    <div className="px-4 mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-gray-600 sm:text-sm">
+    <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-gray-600 sm:text-sm">
       {cafe.category && (
         <span className="flex items-center  capitalize">
           <span className="truncate">{formatLocation(cafe.branch_location)}</span>
@@ -236,7 +236,7 @@ export default function EstablishmentCard({ cafe, rank }) {
       )}
     </div>
 
-   <div className="px-4 space-y-1.5 sm:mt-3">
+   <div className="space-y-1.5 sm:mt-3 mt-1.5">
   {cafe.price_range && (
     <p className="text-xs text-gray-600">
       <PriceRangeDisplay priceRange={cafe.price_range} />
@@ -244,7 +244,7 @@ export default function EstablishmentCard({ cafe, rank }) {
   )}
 </div>
 
-<div className="px-4">
+<div className="">
   <hr className="mt-2 border-t border-gray-100" />
 </div>
   </>
@@ -287,7 +287,7 @@ export default function EstablishmentCard({ cafe, rank }) {
               </p>
             ))
           ) : cafe.description ? (
-            <p className="px-4 line-clamp-2 text-xs  text-gray-600 sm:text-sm">{cafe.description}</p>
+            <p className=" line-clamp-2 text-xs  text-gray-600 sm:text-sm">{cafe.description}</p>
           ) : null}
         </div>
 

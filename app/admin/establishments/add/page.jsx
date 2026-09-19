@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 
 const MAX_IMAGES = 10;
 const MAX_VIDEOS = 3;
+const SUBMIT_TIMEOUT_MS = 60000;
 
 function AddEstablishmentForm() {
   const searchParams = useSearchParams();
@@ -459,11 +460,19 @@ if (cuisineArray.length) formData.append("cuisine", JSON.stringify(cuisineArray)
     orderedNewFiles.forEach((file) => formData.append("images", file));
     formData.append("image_order", JSON.stringify(imageOrder));
 
+    
+
  if (isEditMode) {
   formData.append("existing_logo_url", existingLogoUrl);
   formData.append("existing_image_paths", JSON.stringify(orderedExistingUrls));
   formData.append("existing_video_urls", JSON.stringify(orderedExistingVideoUrls));
 }
+ const controller = new AbortController();
+    let timedOut = false;
+    const timeoutId = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, SUBMIT_TIMEOUT_MS);
 
     try {
       const url = isEditMode
@@ -473,6 +482,7 @@ if (cuisineArray.length) formData.append("cuisine", JSON.stringify(cuisineArray)
       const res = await fetch(url, {
         method: isEditMode ? "PUT" : "POST",
         body: formData,
+        signal: controller.signal,
       });
       const json = await res.json().catch(() => null);
       if (!res.ok) {
@@ -483,10 +493,17 @@ if (cuisineArray.length) formData.append("cuisine", JSON.stringify(cuisineArray)
       if (!isEditMode) resetForm();
     } catch (err) {
       setStatus("error");
-      setErrorMessage(err.message || "Something went wrong. Please try again.");
+      if (timedOut) {
+        setErrorMessage(
+          `The request timed out after ${SUBMIT_TIMEOUT_MS / 1000} seconds. Please check your connection and try again.`
+        );
+      } else {
+        setErrorMessage(err.message || "Something went wrong. Please try again.");
+      }
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
-
   const isSubmitting = status === "submitting";
   const isLoading = status === "loading";
 
