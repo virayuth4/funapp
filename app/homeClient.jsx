@@ -703,22 +703,26 @@ const requestSpin = async () => {
   return (
     <>
     <HomeNavigation/>
-    <main className="min-h-screen bg-[#0d0f12] text-neutral-100 flex flex-col items-center relative overflow-hidden select-none">
-      <SpinSounds ref={spinSoundsRef}  muted={isMuted} />
-      <style jsx global>{`
-        @keyframes pulseGlow {
-          0%, 100% {
-            box-shadow: 0 0 6px 0px var(--glow-color), 0 0 0px 0px var(--glow-color);
-          }
-          50% {
-            box-shadow: 0 0 26px 6px var(--glow-color), 0 0 12px 3px var(--glow-color);
-          }
-        }
-        .staff-favorite-glow {
-          animation: pulseGlow 1.8s ease-in-out infinite;
-        }
-      `}</style>
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(245,158,11,0.06),transparent_70%)] pointer-events-none" />
+<main className="min-h-dvh bg-[#0d0f12] text-neutral-100 flex flex-col items-center relative overflow-hidden select-none">      <SpinSounds ref={spinSoundsRef}  muted={isMuted} />
+    <style jsx global>{`
+  html,
+  body {
+    background-color: #0d0f12;
+  }
+
+  @keyframes pulseGlow {
+    0%, 100% {
+      box-shadow: 0 0 6px 0px var(--glow-color), 0 0 0px 0px var(--glow-color);
+    }
+    50% {
+      box-shadow: 0 0 26px 6px var(--glow-color), 0 0 12px 3px var(--glow-color);
+    }
+  }
+  .staff-favorite-glow {
+    animation: pulseGlow 1.8s ease-in-out infinite;
+  }
+`}</style>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(245,158,11,0.06),transparent_70%)] pointer-events-none " />
 
       <div className="flex flex-col items-center w-full max-w-4xl relative z-10">
         <header className="text-center mb-8 mt-12 md:mt-24">
