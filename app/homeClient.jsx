@@ -44,13 +44,10 @@ export default function HomeClient({ initialCafes, initialCategories, initialErr
   const [suggestedSponsors, setSuggestedSponsors] = useState([]);
   const [modalIsList, setModalIsList] = useState(false);
   const [showReviews, setShowReviews] = useState(false);
-  const [isMuted, setIsMuted] = useState(() => {
-  try {
-    return localStorage.getItem("cafeSpinMuted") === "true";
-  } catch {
-    return false;
-  }
-});
+ const [isMuted, setIsMuted] = useState(false);
+
+
+
 
 const toggleMute = () => {
   setIsMuted((prev) => {
@@ -61,6 +58,12 @@ const toggleMute = () => {
     return next;
   });
 };
+
+ useEffect(() => {
+  try {
+    setIsMuted(localStorage.getItem("cafeSpinMuted") === "true");
+  } catch {}
+}, []);
 
   const [reelItems, setReelItems] = useState([]);
   const [translateX, setTranslateX] = useState(0);
@@ -82,6 +85,8 @@ const toggleMute = () => {
   const [availableCategories, setAvailableCategories] = useState(initialCategories);
   const [isLoadingCafes, setIsLoadingCafes] = useState(!initialCafes?.length);
   const [loadError, setLoadError] = useState(initialError);
+  const [sessionError, setSessionError] = useState(null);
+const [isCreatingSession, setIsCreatingSession] = useState(false);
 
 
 const leaveSession = useCallback((forced = false) => {
@@ -565,41 +570,49 @@ const playSharedSpin = useCallback(
 );
 
   // Subscribe to the session's realtime channel
-  useEffect(() => {
-    if (!sessionId) return;
+useEffect(() => {
+  if (!sessionId) return;
 
-    const pusher = getPusherClient();
-    const channel = pusher.subscribe(`session-${sessionId}`);
-    
+  let pusher, channel;
+  try {
+    pusher = getPusherClient();
+    channel = pusher.subscribe(`session-${sessionId}`);
+    channel.bind("spin", (payload) => playSharedSpin(payload));
+  } catch (err) {
+    console.error("Pusher setup failed:", err);
+    return;
+  }
 
-    channel.bind("spin", (payload) => {
-      playSharedSpin(payload);
-    });
+  fetch(`${process.env.NEXT_PUBLIC_BACKEND}/api/eatdoko/session/${sessionId}`)
+    .then((r) => (r.ok ? r.json() : null))
+    .then((state) => { if (state?.spinning) playSharedSpin(state); })
+    .catch((err) => console.error("Failed to fetch session state:", err));
 
-    fetch(`${process.env.NEXT_PUBLIC_BACKEND}/api/eatdoko/session/${sessionId}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((state) => {
-        if (state?.spinning) playSharedSpin(state);
-      })
-      .catch((err) => console.error("Failed to fetch session state:", err));
-
-    return () => {
-      channel.unbind_all();
-      pusher.unsubscribe(`session-${sessionId}`);
-    };
-  }, [sessionId, playSharedSpin]);
+  return () => {
+    channel.unbind_all();
+    pusher.unsubscribe(`session-${sessionId}`);
+  };
+}, [sessionId, playSharedSpin]);
 
 const createSession = async () => {
+  if (isCreatingSession) return;
+  setIsCreatingSession(true);
+  setSessionError(null);
+
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND}/api/eatdoko/session/create`, {
+    const base = process.env.NEXT_PUBLIC_BACKEND;
+    if (!base) throw new Error("NEXT_PUBLIC_BACKEND is not set in this build");
+
+    const res = await fetch(`${base}/api/eatdoko/session/create`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ branch_location: selectedBranch, selected_type: selectedType }),
     });
     if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+
     const { id } = await res.json();
     setSessionId(id);
-    setSessionExpiresAt(Date.now() + SESSION_TIMEOUT); // ADD
+    setSessionExpiresAt(Date.now() + SESSION_TIMEOUT);
 
     const url = new URL(window.location.href);
     url.searchParams.set("session", id);
@@ -608,6 +621,9 @@ const createSession = async () => {
     setShowShareModal(true);
   } catch (err) {
     console.error("Failed to create session:", err);
+    setSessionError("Couldn't start a session. Please try again.");
+  } finally {
+    setIsCreatingSession(false);
   }
 };
 
@@ -882,7 +898,7 @@ const requestSpin = async () => {
   </div>
 
                {/* Session controls */}
-   <div className="mb-4">
+<div className="mb-4">
   {sessionId ? (
     <div className="flex items-center gap-3">
       <button
@@ -891,16 +907,25 @@ const requestSpin = async () => {
       >
         Click here to invite others
       </button>
-     
- 
     </div>
   ) : (
-    <button
-      onClick={createSession}
-      className="text-xs text-neutral-400 underline hover:text-white cursor-pointer"
-    >
-      Click here to spin with friends
-    </button>
+    <>
+      <button
+        onClick={createSession}
+        disabled={isCreatingSession}
+        className="text-xs text-neutral-400 underline hover:text-white cursor-pointer disabled:opacity-40"
+      >
+        {isCreatingSession
+          ? "Starting session…"
+          : "Click here to spin with friends"}
+      </button>
+
+      {sessionError && (
+        <p className="text-xs text-red-400 mt-1">
+          {sessionError}
+        </p>
+      )}
+    </>
   )}
 </div>
 
