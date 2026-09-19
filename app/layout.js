@@ -20,9 +20,15 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: "EatDoko | Random Cafe & Restaurant Picker",
+  metadataBase: new URL("https://eatdoko.com"),
+  applicationName: "EatDoko",
+  title: {
+    default: "EatDoko | Random Cafe & Restaurant Picker",
+    template: "%s | EatDoko",
+  },
   description:
-    "Can't decide where to eat? Randomly select a cafe or restuarants, so you can stop scrolling and start eating.",
+    "Can't decide where to eat? Randomly select a cafe or restaurant, so you can stop scrolling and start eating.",
+  robots: { index: true, follow: true },
 };
 
 export default function RootLayout({ children }) {

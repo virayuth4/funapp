@@ -287,7 +287,7 @@ export default function EstablishmentCard({ cafe, rank }) {
               </p>
             ))
           ) : cafe.description ? (
-            <p className=" line-clamp-2 text-xs  text-gray-600 sm:text-sm">{cafe.description}</p>
+            <p className=" line-clamp-3 text-xs  text-gray-600 sm:text-sm">{cafe.description}</p>
           ) : null}
         </div>
 
