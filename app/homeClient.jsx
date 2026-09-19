@@ -13,6 +13,7 @@ import RollHistory from "./Components/rollHistory";
 import { getPusherClient } from "@/lib/pusherClient";
 import SessionShareModal from "./Components/sessionShareModal";
 import formattedCountdown from "@/lib/formttedCountdown";
+import { HomeNavigation } from "./Components/navigation";
 
 const TYPE_FIELD = "category";
 
@@ -684,6 +685,8 @@ const requestSpin = async () => {
 }, [sessionId]);
 
   return (
+    <>
+    <HomeNavigation/>
     <main className="min-h-screen bg-[#0d0f12] text-neutral-100 flex flex-col items-center relative overflow-hidden select-none">
       <SpinSounds ref={spinSoundsRef}  muted={isMuted} />
       <style jsx global>{`
@@ -950,5 +953,6 @@ const requestSpin = async () => {
         }}
       />
     </main>
+    </>
   );
 }
