@@ -93,6 +93,8 @@ const toggleMute = () => {
   const [loadError, setLoadError] = useState(initialError);
   const [sessionError, setSessionError] = useState(null);
 const [isCreatingSession, setIsCreatingSession] = useState(false);
+const itemNoun = selectedType === "ALL" ? "place" : selectedType;
+const excludedLabel = `${removedIds.length} ${itemNoun}${removedIds.length === 1 ? "" : "s"} excluded`;
 
 
 const leaveSession = useCallback((forced = false) => {
@@ -996,18 +998,18 @@ const resetExcluded = async () => {
   )}
 </div>
 
-              {removedIds.length > 0 && (
-                <div className="flex items-center gap-2 text-xs text-neutral-500">
-                  <span>{removedIds.length} cafe(s) excluded</span>
-                  <span>•</span>
-                  <button
-                    onClick={resetExcluded}
-                    className="text-amber-500 underline hover:text-amber-400 cursor-pointer"
-                  >
-                    Reset excluded
-                  </button>
-                </div>
-              )}
+            {removedIds.length > 0 && (
+  <div className="flex items-center gap-2 text-xs text-neutral-500">
+    <span>{excludedLabel}</span>
+    <span>•</span>
+    <button
+      onClick={resetExcluded}
+      className="text-amber-500 underline hover:text-amber-400 cursor-pointer"
+    >
+      Reset excluded
+    </button>
+  </div>
+)}
             </div>
           </>
         )}
