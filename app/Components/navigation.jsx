@@ -19,14 +19,14 @@ export default function Navigation() {
       <div className="flex items-center justify-between p-4 md:px-24">
         <Link
           href="/"
-          className="flex items-center gap-2 text-sm font-bold tracking-wide transition-colors !text-neutral-900 hover:!text-amber-500"
+          className="flex items-center gap-2 text-sm font-bold tracking-wide transition-colors text-neutral-900 hover:text-amber-500"
         >
           <span>Eat Doko (Next)?</span>
         </Link>
 
         <Link
           href="/how-we-pick"
-          className="text-sm font-medium tracking-wide transition-colors !text-neutral-900 hover:!text-amber-500"
+          className="text-sm font-medium tracking-wide transition-colors text-neutral-900 hover:text-amber-500"
         >
           How we pick
         </Link>
@@ -36,25 +36,13 @@ export default function Navigation() {
 }
 
 export function HomeNavigation() {
-  const pathname = usePathname();
-  const normalizedPath = normalizePath(pathname);
-
-  if (normalizedPath !== "/") return null;
-
   return (
-    <nav className="fixed top-0 left-0 z-50 w-full max-w-full">
+    <nav data-nav="home" className="fixed top-0 left-0 z-50 w-full max-w-full">
       <div className="flex items-center justify-between p-4 md:px-24">
-        <Link
-          href="/"
-          className="flex items-center gap-2 text-sm font-bold tracking-wide transition-colors !text-white hover:!text-amber-400"
-        >
-          <span>Eat Doko (Next)?</span>
+        <Link href="/" style={{ color: "#fff" }} className="text-sm font-bold tracking-wide">
+          Eat Doko (Next)?
         </Link>
-
-        <Link
-          href="/how-we-pick"
-          className="text-sm font-medium tracking-wide transition-colors !text-white hover:!text-amber-400"
-        >
+        <Link href="/how-we-pick" style={{ color: "#fff" }} className="text-sm font-medium tracking-wide">
           How we pick
         </Link>
       </div>
