@@ -1,12 +1,15 @@
 // app/Components/establishmentCard.js
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import PriceRangeDisplay from './priceRangeDisplay';
 import { formatLocation } from '@/lib/formatLocation';
 import TagList from './tagDisplay';
+import { formatList } from '@/lib/capitlize';
+import OpeningHoursList from './openingHoursList';
+
 
 function BubbleRating({ rating = 0, count = 0 }) {
   if (!rating) return null;
@@ -193,6 +196,8 @@ export default function EstablishmentCard({ cafe, rank }) {
   const [saved, setSaved] = useState(false);
   const toggleSave = () => setSaved((s) => !s);
 
+
+
   // Generates Google Maps search URL from cafe coordinates or location query
   const mapQuery = encodeURIComponent(
     [cafe.name, cafe.branch_location].filter(Boolean).join(', ')
@@ -221,19 +226,21 @@ export default function EstablishmentCard({ cafe, rank }) {
     <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-gray-600 sm:text-sm">
       {cafe.category && (
         <span className="flex items-center  capitalize">
-          <span className="truncate">{formatLocation(cafe.branch_location)}</span>
+          <span className="truncate">{formatLocation(cafe.branch_location)}  {cafe.cuisines?.length > 0 && <> / {formatList(cafe.cuisines)}</>}</span>
+          
         </span>
       )}
      
-      {cafe.hours_note && (
-        <>
-          <span className="text-gray-300">·</span>
-          <span className="flex items-center gap-1 text-rose-600">
-            <ClockIcon className="h-3.5 w-3.5" />
-            {cafe.hours_note}
-          </span>
-        </>
-      )}
+        {cafe.opening_hours && (
+          <div className="mt-1.5 px-4 sm:px-0">
+            <OpeningHoursList
+              hours={cafe.opening_hours}
+              note={cafe.hours_note}
+              showFootnote={true}
+              className="text-white"
+            />
+          </div>
+        )}
     </div>
 
    <div className="space-y-1.5 sm:mt-3 mt-1.5">

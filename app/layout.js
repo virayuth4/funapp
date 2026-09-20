@@ -3,6 +3,7 @@ import "./globals.css";
 import { AuthProvider } from "./context/authContext";
 import Navigation from "./Components/navigation";
 import { Analytics } from "@vercel/analytics/next"
+import GoogleAnalytics from "./Components/googleAnalytics";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -39,6 +40,7 @@ export default function RootLayout({ children }) {
     >
       <body className="min-h-full flex flex-col ">
         <AuthProvider>
+           <GoogleAnalytics GA_MEASUREMENT_ID={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || 'G-REMW3YQ738'} />
           <Navigation/>
           <Analytics/>
         {children}

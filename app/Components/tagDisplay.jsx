@@ -15,10 +15,9 @@ export default function TagList({
     dark: "border-gray-700 text-gray-300",
   };
 
-  const tagClasses = `rounded border px-1.5 py-0.5 text-[10px] ${
-    variants[variant] ?? variants.default
-  }`;
-
+const tagClasses = `rounded border px-1.5 py-0.5 text-[10px] first-letter:uppercase ${
+  variants[variant] ?? variants.default
+}`;
   return (
     <div className={`flex flex-wrap gap-1 pt-0.5 ${className}`}>
       {visibleTags.map((tag) => (

@@ -3,7 +3,11 @@
 import { useState } from "react";
 import Image from "next/image";
 
-export default function SpinnerImage({ className = "", ...props }) {
+export default function SpinnerImage({
+  className = "",
+  alt = "",
+  ...props
+}) {
   const [loaded, setLoaded] = useState(false);
 
   return (
@@ -16,7 +20,7 @@ export default function SpinnerImage({ className = "", ...props }) {
 
       <Image
         {...props}
-        alt
+        alt={alt}
         onLoad={() => setLoaded(true)}
         onError={() => setLoaded(true)}
         className={`${className} transition-opacity duration-300 ${

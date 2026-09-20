@@ -6,6 +6,19 @@ const MAX_IMAGES = 10;
 const MAX_VIDEOS = 3;
 const SUBMIT_TIMEOUT_MS = 60000;
 
+const DAYS = [
+  { key: "mon", label: "Monday" },
+  { key: "tue", label: "Tuesday" },
+  { key: "wed", label: "Wednesday" },
+  { key: "thu", label: "Thursday" },
+  { key: "fri", label: "Friday" },
+  { key: "sat", label: "Saturday" },
+  { key: "sun", label: "Sunday" },
+];
+
+const emptyHours = () =>
+  Object.fromEntries(DAYS.map(({ key }) => [key, { closed: false, open: "", close: "" }]));
+
 function AddEstablishmentForm() {
   const searchParams = useSearchParams();
   const isEditMode = searchParams.get("edit") === "true";
@@ -33,6 +46,7 @@ function AddEstablishmentForm() {
   const [existingLogoUrl, setExistingLogoUrl] = useState("");
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
+  const [openingHours, setOpeningHours] = useState(emptyHours);
   
 
   // Gallery images: a single ordered array mixing existing (already-saved) and
@@ -138,6 +152,21 @@ useEffect(() => {
           : (establishment.tags || "");
         setTags(loadedTags);
 
+        const loadedHours = emptyHours();
+              if (establishment.opening_hours && typeof establishment.opening_hours === "object") {
+                DAYS.forEach(({ key }) => {
+                  const d = establishment.opening_hours[key];
+                  if (d) {
+                    loadedHours[key] = {
+                      closed: Boolean(d.closed),
+                      open: d.open || "",
+                      close: d.close || "",
+                    };
+                  }
+                });   
+              }
+              setOpeningHours(loadedHours);
+
         const loadedVideos = Array.isArray(establishment.video_urls)
           ? establishment.video_urls.map((url) => ({ id: nextId(), type: "existing", url }))
           : [];
@@ -157,6 +186,20 @@ useEffect(() => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditMode, establishmentId]);
+
+  function updateDay(key, patch) {
+  setOpeningHours((prev) => ({ ...prev, [key]: { ...prev[key], ...patch } }));
+}
+
+function copyMondayToAll() {
+  setOpeningHours((prev) => {
+    const next = {};
+    DAYS.forEach(({ key }) => {
+      next[key] = { ...prev.mon };
+    });
+    return next;
+  });
+}
 
   function addVideoFiles(fileList) {
   const incoming = Array.from(fileList).filter((f) => f.type.startsWith("video/"));
@@ -380,6 +423,14 @@ function handleVideosInputChange(e) {
     videos.forEach((v) => {
       if (v.type === "new" && v.previewUrl) URL.revokeObjectURL(v.previewUrl);
     });
+    for (const { key, label } of DAYS) {
+  const d = openingHours[key];
+  if (!d.closed && Boolean(d.open) !== Boolean(d.close)) {
+    setStatus("error");
+    setErrorMessage(`Set both opening and closing time for ${label}, or leave both blank.`);
+    return;
+  }
+}
     setName("");
     setSlug("");
     setSlugTouched(false);
@@ -426,6 +477,12 @@ function handleVideosInputChange(e) {
     formData.append("in_roll", inRoll);
     if (logo?.file) formData.append("logo", logo.file);
 
+    const hasHours = DAYS.some(
+  ({ key }) =>
+    openingHours[key].closed || (openingHours[key].open && openingHours[key].close)
+);
+if (hasHours) formData.append("opening_hours", JSON.stringify(openingHours));
+
     
  const cuisineArray = cuisine
   .split(",")
@@ -441,6 +498,8 @@ if (cuisineArray.length) formData.append("cuisine", JSON.stringify(cuisineArray)
     .map((t) => t.trim())
     .filter(Boolean);
   if (tagsArray.length) formData.append("tags", JSON.stringify(tagsArray));
+
+  
 
     // Build the ordered lists the backend needs to reconstruct final order:
     // - orderedExistingUrls: existing image urls, in their current display order
@@ -696,6 +755,64 @@ if (cuisineArray.length) formData.append("cuisine", JSON.stringify(cuisineArray)
               className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
             />
           </div>
+
+          {/* Opening hours */}
+<div>
+  <div className="flex items-baseline justify-between">
+    <label className="block text-sm font-medium text-slate-700">
+      Opening hours <span className="text-slate-400 font-normal">(optional)</span>
+    </label>
+    <button
+      type="button"
+      onClick={copyMondayToAll}
+      className="text-xs font-medium text-slate-500 hover:text-slate-900"
+    >
+      Copy Monday to all days
+    </button>
+  </div>
+
+  <div className="mt-1.5 divide-y divide-slate-100 rounded-lg border border-slate-200">
+    {DAYS.map(({ key, label }) => {
+      const day = openingHours[key];
+      return (
+        <div key={key} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2">
+          <span className="w-24 text-sm text-slate-700">{label}</span>
+
+          <input
+            type="time"
+            value={day.open}
+            disabled={day.closed}
+            onChange={(e) => updateDay(key, { open: e.target.value })}
+            aria-label={`${label} opening time`}
+            className="w-28 rounded-lg border border-slate-300 px-2 py-1 text-sm text-slate-900 focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200 disabled:bg-slate-50 disabled:text-slate-300"
+          />
+          <span className="text-slate-400">–</span>
+          <input
+            type="time"
+            value={day.close}
+            disabled={day.closed}
+            onChange={(e) => updateDay(key, { close: e.target.value })}
+            aria-label={`${label} closing time`}
+            className="w-28 rounded-lg border border-slate-300 px-2 py-1 text-sm text-slate-900 focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200 disabled:bg-slate-50 disabled:text-slate-300"
+          />
+
+          <label className="ml-auto flex items-center gap-1.5 text-xs text-slate-600">
+            <input
+              type="checkbox"
+              checked={day.closed}
+              onChange={(e) => updateDay(key, { closed: e.target.checked })}
+              className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-400"
+            />
+            Closed
+          </label>
+        </div>
+      );
+    })}
+  </div>
+  <p className="mt-1 text-xs text-slate-400">
+    Leave a day blank if unknown. For overnight hours (e.g. 18:00–02:00), set the closing time after midnight.
+  </p>
+</div>
 
           {/* Accent / Instagram */}
           <div className="grid grid-cols-2 gap-4">

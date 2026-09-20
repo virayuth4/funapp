@@ -1,5 +1,5 @@
 // app/sitemap.js
-import { CAFE_LOCATIONS } from '@/lib/locations';
+import { CAFE_LOCATIONS } from '@/lib/seo/cafeLocations';
 // import { getAllCafes } from '@/lib/api'; // uncomment when /cafe/[slug] exists
 
 export default async function sitemap() {

@@ -1,12 +1,15 @@
 "use client";
 
-import { useRef, useState, useMemo } from "react";
+import { useRef, useState, useMemo, useEffect, useSyncExternalStore } from "react";
 import Image from "next/image";
 import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
 import { convertPriceRange } from "@/lib/priceRange";
 import { formatLocation } from "@/lib/formatLocation";
 import TagList from "./tagDisplay";
 import SpinnerImage from "./spinnerImage";
+import { formatList } from "@/lib/capitlize";
+import OpeningHoursList from "./openingHoursList";
+import PriceRangeDisplay from "./priceRangeDisplay";
 
 /* ---------- Small icons ---------- */
 
@@ -196,7 +199,7 @@ function CafeRow({ rank, cafe, accent, onClick }) {
   const images = cafe.image_paths?.length
     ? cafe.image_paths
     : [cafe.logo_url];
-
+ 
   const hasTags =
     Array.isArray(cafe.tags) && cafe.tags.length > 0;
 
@@ -230,63 +233,36 @@ function CafeRow({ rank, cafe, accent, onClick }) {
           count={cafe.review_count}
         />
       </div>
-
-      <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 px-4 text-xs text-white sm:px-0 sm:text-sm">
-        {cafe.category && (
-          <span className="capitalize">
-            {cafe.category}
-          </span>
-        )}
-
-        {cafe.branch_location && (
-          <>
-            <span className="text-gray-300">·</span>
-
-            <span className="truncate">
-              {formatLocation(cafe.branch_location)}
-            </span>
-          </>
-        )}
-
-        {cafe.hours_note && (
-          <>
-            <span className="text-gray-300">·</span>
-
-            <span className="flex items-center gap-1 text-rose-600">
-              <ClockIcon className="h-3.5 w-3.5" />
-              {cafe.hours_note}
-            </span>
-          </>
-        )}
-      </div>
-
-      {cafe.price_range && (
-        <div className="mt-1.5 px-4 text-xs text-white sm:px-0">
-          <div className="flex flex-wrap items-center gap-x-2">
-            <span>USD ${cafe.price_range}</span>
-
-            {cny && (
-              <>
-                <span className="text-gray-300">|</span>
-
-                <span>
-                  CNY ¥{cny.min}-{cny.max}
-                </span>
-              </>
-            )}
-
-            {jpy && (
-              <>
-                <span className="text-gray-300">|</span>
-
-                <span>
-                  JPY ¥{jpy.min}-{jpy.max}
-                </span>
-              </>
-            )}
-          </div>
-        </div>
+<div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 px-4 text-xs text-white sm:px-0 sm:text-sm">
+  {cafe.branch_location && (
+    <span className="truncate">
+      {formatLocation(cafe.branch_location)}
+      {cafe.cuisines?.length > 0 && (
+        <> / {formatList(cafe.cuisines)}</>
       )}
+    </span>
+  )}
+</div>
+
+{/* Opening hours */}
+{cafe.opening_hours && (
+  <div className="mt-1.5 px-4 sm:px-0">
+    <OpeningHoursList
+      hours={cafe.opening_hours}
+      note={cafe.hours_note}
+      showFootnote={true}
+      className="text-white"
+    />
+  </div>
+)}
+
+{/* Price */}
+ {cafe.price_range && (
+    <p className="text-xs text-white pt-1.5 px-4">
+      <PriceRangeDisplay priceRange={cafe.price_range} />
+    </p>
+  )}
+     
     </>
   );
 
@@ -333,11 +309,14 @@ function CafeRow({ rank, cafe, accent, onClick }) {
             ))
           ) : cafe.description ? (
             <p className="line-clamp-2 text-xs text-white sm:text-sm">
+              
               {cafe.description}
             </p>
           ) : null}
 
          <TagList tags={cafe.tags} className="pt-0.5" />
+        
+       
         </div>
       </div>
     </div>
