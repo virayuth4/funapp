@@ -258,7 +258,7 @@ function CafeRow({ rank, cafe, accent, onClick }) {
 
 {/* Price */}
  {cafe.price_range && (
-    <p className="text-xs text-white pt-1.5 px-4">
+    <p className="text-xs text-white pt-1.5">
       <PriceRangeDisplay priceRange={cafe.price_range} />
     </p>
   )}
