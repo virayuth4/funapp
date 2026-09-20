@@ -291,7 +291,7 @@ export default function EstablishmentCard({ cafe, rank }) {
           ) : null}
         </div>
 
-           <div className="mt-2 space-y-1.5 sm:mt-3 mx-4">
+           <div className="mt-2 space-y-1.5 sm:mt-3">
                 <TagList tags={cafe.tags} className="pt-0.5" />
 
 
