@@ -57,7 +57,7 @@ const PRIZES = [
     image: "/logos/happy-potato/jumbo-nugget.jpg",
   },
   { id: "discount", 
-    label: "20% Discount", 
+    label: "1 Dipdip Sauce", 
     color: BRAND.red, 
     textColor: BRAND.cream ,
     image: "/logos/happy-potato/save  .jpg",
