@@ -329,14 +329,15 @@ useEffect(() => {
       historyId: null,
     };
 
-    setRollHistory((prev) => {
-      const updated = [entry, ...prev].slice(0, MAX_HISTORY);
-      try {
-        localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
-      } catch {}
-      return updated;
-    });
+setRollHistory((prev) => {
+  const updated = [entry, ...prev].slice(0, MAX_HISTORY);
 
+  try {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+  } catch {}
+
+  return updated;
+});
     let userId = null;
     try {
       userId = localStorage.getItem("userId");
@@ -1022,7 +1023,13 @@ const resetExcluded = async () => {
   sessionUrl={sessionUrl}
 />
 
-<RollHistory/>
+<RollHistory
+  localHistory={rollHistory}
+  onOpenEntry={openHistoryEntry}
+  onToggleVisited={toggleVisited}
+  onClearHistory={clearHistory}
+/>
+
 
       <CafeListView
         cafes={availableCafes}
