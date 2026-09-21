@@ -1022,6 +1022,8 @@ const resetExcluded = async () => {
   sessionUrl={sessionUrl}
 />
 
+<RollHistory/>
+
       <CafeListView
         cafes={availableCafes}
         accentMap={ACCENT_MAP}
