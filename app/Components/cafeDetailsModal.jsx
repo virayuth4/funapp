@@ -7,6 +7,7 @@ import Link from "next/link";
 import Lightbox from "yet-another-react-lightbox";
 import "yet-another-react-lightbox/styles.css";
 import { Maximize2 } from "lucide-react";
+import { trackMapClick } from "@/lib/trackMapClick";
 
 export default function CafeDetailModal({
   isOpen,
@@ -270,15 +271,21 @@ export default function CafeDetailModal({
           <div className="mt-5 flex flex-col gap-2.5">
             {/* Google Maps */}
             <a
-              href={entity.map}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`group w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-lg text-xs font-bold transition-all ${
-                isPartnerView
-                  ? "bg-amber-500 hover:bg-amber-400 text-black shadow-lg shadow-amber-500/10"
-                  : "bg-white hover:bg-neutral-200 text-black"
-              }`}
-            >
+            href={entity.map}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() =>
+                  trackMapClick(entity, {
+                    isPartner: isPartnerView,
+                    source: isPartnerView ? "partner" : isList ? "list" : "spin",
+                  })
+                }
+                className={`group w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-lg text-xs font-bold transition-all ${
+                  isPartnerView
+                    ? "bg-amber-500 hover:bg-amber-400 text-black shadow-lg shadow-amber-500/10"
+                    : "bg-white hover:bg-neutral-200 text-black"
+                }`}
+              >
               <span className="text-base">📍</span>
               <span>Google Maps</span>
             </a>
