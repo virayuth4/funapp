@@ -74,7 +74,7 @@ const toggleMute = () => {
   const [reelItems, setReelItems] = useState([]);
   const [translateX, setTranslateX] = useState(0);
   const [transitionStyle, setTransitionStyle] = useState("none");
-  const [rollHistory, setRollHistory] = useState([]);
+  const rollHistoryRef = useRef(null);
   const [showAllModal, setShowAllModal] = useState(false);
 
   // --- Shared session state ---
@@ -192,22 +192,13 @@ useEffect(() => {
   return () => controller.abort();
 }, [loadData, initialCafes]);
 
-  const HISTORY_KEY = "cafeRollHistory";
-  const MAX_HISTORY = 20;
 
   const lastTickIndexRef = useRef(-1);
   const animationFrameRef = useRef(null);
   const spinSoundsRef = useRef(null);
   const branches = ["ALL", "BKK", "TTP", "TK", "IFL"];
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(HISTORY_KEY);
-      if (stored) setRollHistory(JSON.parse(stored));
-    } catch {
-      // ignore malformed/missing data
-    }
-  }, []);
+
 
   // Read ?session= from the URL on mount
 useEffect(() => {
@@ -317,102 +308,6 @@ useEffect(() => {
 
 
 
-  const addToHistory = useCallback((cafe) => {
-    const entry = {
-      id: cafe.id,
-      name: cafe.name,
-      branch_location: cafe.branch_location,
-      logo_url: cafe.logo_url,
-      accentColor: cafe.reelAccent?.color,
-      timestamp: Date.now(),
-      visited: false,
-      historyId: null,
-    };
-
-setRollHistory((prev) => {
-  const updated = [entry, ...prev].slice(0, MAX_HISTORY);
-
-  try {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
-  } catch {}
-
-  return updated;
-});
-    let userId = null;
-    try {
-      userId = localStorage.getItem("userId");
-    } catch {}
-    if (!userId) return;
-
-    fetch(`${process.env.NEXT_PUBLIC_BACKEND}/api/eatdoko/history/add`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId,
-        id: entry.id,
-        name: entry.name,
-        branch_location: entry.branch_location,
-        logo_url: entry.logo_url,
-        accentColor: entry.accentColor,
-      }),
-    })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (!data?.entry?.id) return;
-        setRollHistory((prev) => {
-          const updated = prev.map((e) =>
-            e.timestamp === entry.timestamp ? { ...e, historyId: data.entry.id } : e
-          );
-          try {
-            localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
-          } catch {}
-          return updated;
-        });
-      })
-      .catch((err) => console.error("Failed to sync history to backend:", err));
-  }, []);
-
-  const toggleVisited = (timestamp) => {
-    const target = rollHistory.find((e) => e.timestamp === timestamp);
-    if (!target) return;
-    const nextVisited = !target.visited;
-
-    setRollHistory((prev) => {
-      const updated = prev.map((e) =>
-        e.timestamp === timestamp ? { ...e, visited: nextVisited } : e
-      );
-      try {
-        localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
-      } catch {}
-      return updated;
-    });
-
-    if (!target.historyId) return;
-
-    let userId = null;
-    try {
-      userId = localStorage.getItem("userId");
-    } catch {}
-    if (!userId) return;
-
-    fetch(`${process.env.NEXT_PUBLIC_BACKEND}/api/eatdoko/history/${target.historyId}/visited`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, visited: nextVisited }),
-    }).catch((err) => console.error("Failed to sync visited status:", err));
-  };
-
-  const clearHistory = () => {
-    setRollHistory([]);
-    try {
-      localStorage.removeItem(HISTORY_KEY);
-    } catch {}
-  };
-
-  const closeAllModals = () => {
-    setActiveModalItem(null);
-    setSuggestedSponsors([]);
-  };
 
   const preloadImage = (src, label = "") => {
     if (!src) return;
@@ -475,7 +370,7 @@ setRollHistory((prev) => {
           }
             setSuggestedSponsors(pickSponsorsFor(chosenWinner));
             setActiveModalItem(chosenWinner);
-            addToHistory(chosenWinner);
+            rollHistoryRef.current?.addEntry(chosenWinner);
             setIsSpinning(false);
           }
         };
@@ -497,10 +392,10 @@ setRollHistory((prev) => {
       }
       setSuggestedSponsors(pickSponsorsFor(winnerCafe));
       setActiveModalItem(winnerCafe);
-      addToHistory(winnerCafe);
+      rollHistoryRef.current?.addEntry(winnerCafe);
       setIsSpinning(false);
     },
-    [pickSponsorsFor, addToHistory]
+    [pickSponsorsFor]
   );
 
 
@@ -575,7 +470,7 @@ const playSharedSpin = useCallback(
             }
             setSuggestedSponsors(pickSponsorsFor(winnerCafe));
             setActiveModalItem(winnerCafe);
-            addToHistory(winnerCafe);
+            rollHistoryRef.current?.addEntry(winnerCafe);
             setIsSpinning(false);
             activeSpinRef.current = null;
           }
@@ -585,7 +480,7 @@ const playSharedSpin = useCallback(
       });
     });
   },
-  [cafes, pickSponsorsFor, addToHistory]
+  [cafes, pickSponsorsFor]
 );
 
   // Subscribe to the session's realtime channel
@@ -1023,12 +918,7 @@ const resetExcluded = async () => {
   sessionUrl={sessionUrl}
 />
 
-<RollHistory
-  localHistory={rollHistory}
-  onOpenEntry={openHistoryEntry}
-  onToggleVisited={toggleVisited}
-  onClearHistory={clearHistory}
-/>
+<RollHistory ref={rollHistoryRef} onOpenEntry={openHistoryEntry} />
 
 
       <CafeListView

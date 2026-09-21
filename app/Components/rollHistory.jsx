@@ -1,20 +1,141 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import {
+  useState,
+  useCallback,
+  useRef,
+  useEffect,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
 import Image from "next/image";
 
-export default function RollHistory({
-  localHistory = [],
-  onOpenEntry,
-  onToggleVisited,
-  onClearHistory,
-}) {
+const HISTORY_KEY = "cafeRollHistory";
+const MAX_HISTORY = 20;
+
+function persistHistory(entries) {
+  try {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(entries));
+  } catch {}
+}
+
+function getUserId() {
+  try {
+    return localStorage.getItem("userId");
+  } catch {
+    return null;
+  }
+}
+
+const RollHistory = forwardRef(function RollHistory({ onOpenEntry }, ref) {
   const [activeTab, setActiveTab] = useState("mine");
+  const [localHistory, setLocalHistory] = useState([]);
   const [globalHistory, setGlobalHistory] = useState([]);
   const [isLoadingGlobal, setIsLoadingGlobal] = useState(false);
   const [globalError, setGlobalError] = useState(null);
   const hasFetchedGlobal = useRef(false);
 
+  // --- Load local history on mount ---
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(HISTORY_KEY);
+      if (stored) setLocalHistory(JSON.parse(stored));
+    } catch {
+      // ignore malformed/missing data
+    }
+  }, []);
+
+  // --- Add a new roll (called by the parent via ref) ---
+  const addEntry = useCallback((cafe) => {
+    const entry = {
+      id: cafe.id,
+      name: cafe.name,
+      branch_location: cafe.branch_location,
+      logo_url: cafe.logo_url,
+      accentColor: cafe.reelAccent?.color,
+      timestamp: Date.now(),
+      visited: false,
+      historyId: null,
+    };
+
+    setLocalHistory((prev) => {
+      const updated = [entry, ...prev].slice(0, MAX_HISTORY);
+      persistHistory(updated);
+      return updated;
+    });
+
+    const userId = getUserId();
+    if (!userId) return;
+
+    fetch(`${process.env.NEXT_PUBLIC_BACKEND}/api/eatdoko/history/add`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId,
+        id: entry.id,
+        name: entry.name,
+        branch_location: entry.branch_location,
+        logo_url: entry.logo_url,
+        accentColor: entry.accentColor,
+      }),
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data?.entry?.id) return;
+        setLocalHistory((prev) => {
+          const updated = prev.map((e) =>
+            e.timestamp === entry.timestamp
+              ? { ...e, historyId: data.entry.id }
+              : e
+          );
+          persistHistory(updated);
+          return updated;
+        });
+      })
+      .catch((err) => console.error("Failed to sync history to backend:", err));
+  }, []);
+
+  // Expose addEntry to the parent: rollHistoryRef.current?.addEntry(cafe)
+  useImperativeHandle(ref, () => ({ addEntry }), [addEntry]);
+
+  // --- Toggle visited ---
+  const toggleVisited = (timestamp) => {
+    const target = localHistory.find((e) => e.timestamp === timestamp);
+    if (!target) return;
+    const nextVisited = !target.visited;
+
+    setLocalHistory((prev) => {
+      const updated = prev.map((e) =>
+        e.timestamp === timestamp ? { ...e, visited: nextVisited } : e
+      );
+      persistHistory(updated);
+      return updated;
+    });
+
+    if (!target.historyId) return;
+
+    const userId = getUserId();
+    if (!userId) return;
+
+    fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND}/api/eatdoko/history/${target.historyId}/visited`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, visited: nextVisited }),
+      }
+    ).catch((err) => console.error("Failed to sync visited status:", err));
+  };
+
+  // --- Clear local history ---
+  const clearHistory = () => {
+    setLocalHistory([]);
+    try {
+      localStorage.removeItem(HISTORY_KEY);
+    } catch {}
+  };
+
+  // --- Global history ---
   const fetchGlobalHistory = useCallback(async (force = false) => {
     if (hasFetchedGlobal.current && !force) return;
 
@@ -114,7 +235,7 @@ export default function RollHistory({
         ) : (
           localHistory.length > 0 && (
             <button
-              onClick={onClearHistory}
+              onClick={clearHistory}
               className="text-[10px] text-neutral-500 hover:text-amber-400 underline cursor-pointer"
             >
               Clear
@@ -209,7 +330,7 @@ export default function RollHistory({
                 {/* Visit button */}
                 {!isGlobalTab && (
                   <button
-                    onClick={() => onToggleVisited?.(entry.timestamp)}
+                    onClick={() => toggleVisited(entry.timestamp)}
                     className={`text-[9px] font-mono uppercase tracking-wider px-2 py-1 rounded border transition-colors cursor-pointer whitespace-nowrap ${
                       entry.visited
                         ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-400"
@@ -219,11 +340,13 @@ export default function RollHistory({
                     {entry.visited ? "✓ Visited" : "Visit"}
                   </button>
                 )}
-              </div>
+              </div>    
             </div>
           ))}
         </div>
       )}
     </div>
   );
-}       
+});
+
+export default RollHistory;

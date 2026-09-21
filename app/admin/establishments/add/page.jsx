@@ -15,9 +15,27 @@ const DAYS = [
   { key: "sat", label: "Saturday" },
   { key: "sun", label: "Sunday" },
 ];
+const emptyDay = () => ({ closed: false, periods: [{ open: "", close: "" }] });
+
 
 const emptyHours = () =>
-  Object.fromEntries(DAYS.map(({ key }) => [key, { closed: false, open: "", close: "" }]));
+  Object.fromEntries(DAYS.map(({ key }) => [key, emptyDay()]));
+
+function normalizeDay(d) {
+  if (!d) return emptyDay();
+  if (Array.isArray(d.periods)) {
+    return {
+      closed: Boolean(d.closed),
+      periods: d.periods.length
+        ? d.periods.map((p) => ({ open: p.open || "", close: p.close || "" }))
+        : [{ open: "", close: "" }],
+    };
+  }
+  return {
+    closed: Boolean(d.closed),
+    periods: [{ open: d.open || "", close: d.close || "" }],
+  };
+}
 
 function AddEstablishmentForm() {
   const searchParams = useSearchParams();
@@ -152,20 +170,13 @@ useEffect(() => {
           : (establishment.tags || "");
         setTags(loadedTags);
 
-        const loadedHours = emptyHours();
-              if (establishment.opening_hours && typeof establishment.opening_hours === "object") {
-                DAYS.forEach(({ key }) => {
-                  const d = establishment.opening_hours[key];
-                  if (d) {
-                    loadedHours[key] = {
-                      closed: Boolean(d.closed),
-                      open: d.open || "",
-                      close: d.close || "",
-                    };
-                  }
-                });   
-              }
-              setOpeningHours(loadedHours);
+       const loadedHours = emptyHours();
+        if (establishment.opening_hours && typeof establishment.opening_hours === "object") {
+          DAYS.forEach(({ key }) => {
+            loadedHours[key] = normalizeDay(establishment.opening_hours[key]);
+          });
+        }
+        setOpeningHours(loadedHours);
 
         const loadedVideos = Array.isArray(establishment.video_urls)
           ? establishment.video_urls.map((url) => ({ id: nextId(), type: "existing", url }))
@@ -187,18 +198,70 @@ useEffect(() => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditMode, establishmentId]);
 
-  function updateDay(key, patch) {
+function updateDay(key, patch) {
   setOpeningHours((prev) => ({ ...prev, [key]: { ...prev[key], ...patch } }));
+}
+
+function updatePeriod(key, index, patch) {
+  setOpeningHours((prev) => ({
+    ...prev,
+    [key]: {
+      ...prev[key],
+      periods: prev[key].periods.map((p, i) => (i === index ? { ...p, ...patch } : p)),
+    },
+  }));
+}
+
+function addPeriod(key) {
+  setOpeningHours((prev) => ({
+    ...prev,
+    [key]: { ...prev[key], periods: [...prev[key].periods, { open: "", close: "" }] },
+  }));
+}
+
+function removePeriod(key, index) {
+  setOpeningHours((prev) => {
+    const periods = prev[key].periods.filter((_, i) => i !== index);
+    return {
+      ...prev,
+      [key]: { ...prev[key], periods: periods.length ? periods : [{ open: "", close: "" }] },
+    };
+  });
 }
 
 function copyMondayToAll() {
   setOpeningHours((prev) => {
     const next = {};
     DAYS.forEach(({ key }) => {
-      next[key] = { ...prev.mon };
+      next[key] = {
+        closed: prev.mon.closed,
+        periods: prev.mon.periods.map((p) => ({ ...p })),
+      };
     });
     return next;
   });
+}
+
+// Validates and strips empty periods. Returns { value } or { error }.
+function buildOpeningHoursPayload() {
+  const payload = {};
+  for (const { key, label } of DAYS) {
+    const d = openingHours[key];
+    if (d.closed) {
+      payload[key] = { closed: true, periods: [] };
+      continue;
+    }
+    const periods = [];
+    for (const p of d.periods) {
+      if (!p.open && !p.close) continue; // skip blank rows
+      if (!p.open || !p.close) {
+        return { error: `Set both opening and closing time for ${label}, or leave both blank.` };
+      }
+      periods.push({ open: p.open, close: p.close });
+    }
+    if (periods.length) payload[key] = { closed: false, periods };
+  }
+  return { value: Object.keys(payload).length ? payload : null };
 }
 
   function addVideoFiles(fileList) {
@@ -456,6 +519,12 @@ function handleVideosInputChange(e) {
     e.preventDefault();
     setStatus("submitting");
     setErrorMessage("");
+      const { value: hoursPayload, error: hoursError } = buildOpeningHoursPayload();
+        if (hoursError) {
+          setStatus("error");
+          setErrorMessage(hoursError);
+          return;
+        }
 
     const formData = new FormData();
     formData.append("name", name.trim());
@@ -481,8 +550,7 @@ function handleVideosInputChange(e) {
   ({ key }) =>
     openingHours[key].closed || (openingHours[key].open && openingHours[key].close)
 );
-if (hasHours) formData.append("opening_hours", JSON.stringify(openingHours));
-
+if (hoursPayload) formData.append("opening_hours", JSON.stringify(hoursPayload));
     
  const cuisineArray = cuisine
   .split(",")
@@ -771,44 +839,71 @@ if (cuisineArray.length) formData.append("cuisine", JSON.stringify(cuisineArray)
     </button>
   </div>
 
-  <div className="mt-1.5 divide-y divide-slate-100 rounded-lg border border-slate-200">
-    {DAYS.map(({ key, label }) => {
-      const day = openingHours[key];
-      return (
-        <div key={key} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2">
-          <span className="w-24 text-sm text-slate-700">{label}</span>
+ <div className="mt-1.5 divide-y divide-slate-100 rounded-lg border border-slate-200">
+  {DAYS.map(({ key, label }) => {
+    const day = openingHours[key];
+    return (
+      <div key={key} className="flex items-start gap-3 px-3 py-2">
+        <span className="w-24 shrink-0 pt-1 text-sm text-slate-700">{label}</span>
 
-          <input
-            type="time"
-            value={day.open}
-            disabled={day.closed}
-            onChange={(e) => updateDay(key, { open: e.target.value })}
-            aria-label={`${label} opening time`}
-            className="w-28 rounded-lg border border-slate-300 px-2 py-1 text-sm text-slate-900 focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200 disabled:bg-slate-50 disabled:text-slate-300"
-          />
-          <span className="text-slate-400">–</span>
-          <input
-            type="time"
-            value={day.close}
-            disabled={day.closed}
-            onChange={(e) => updateDay(key, { close: e.target.value })}
-            aria-label={`${label} closing time`}
-            className="w-28 rounded-lg border border-slate-300 px-2 py-1 text-sm text-slate-900 focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200 disabled:bg-slate-50 disabled:text-slate-300"
-          />
-
-          <label className="ml-auto flex items-center gap-1.5 text-xs text-slate-600">
-            <input
-              type="checkbox"
-              checked={day.closed}
-              onChange={(e) => updateDay(key, { closed: e.target.checked })}
-              className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-400"
-            />
-            Closed
-          </label>
+        <div className="flex-1 space-y-1.5">
+          {day.closed ? (
+            <span className="inline-block pt-1 text-sm text-slate-400">Closed</span>
+          ) : (
+            <>
+              {day.periods.map((p, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <input
+                    type="time"
+                    value={p.open}
+                    onChange={(e) => updatePeriod(key, idx, { open: e.target.value })}
+                    aria-label={`${label} opening time ${idx + 1}`}
+                    className="w-28 rounded-lg border border-slate-300 px-2 py-1 text-sm text-slate-900 focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                  />
+                  <span className="text-slate-400">–</span>
+                  <input
+                    type="time"
+                    value={p.close}
+                    onChange={(e) => updatePeriod(key, idx, { close: e.target.value })}
+                    aria-label={`${label} closing time ${idx + 1}`}
+                    className="w-28 rounded-lg border border-slate-300 px-2 py-1 text-sm text-slate-900 focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                  />
+                  {day.periods.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removePeriod(key, idx)}
+                      className="flex h-5 w-5 items-center justify-center rounded-full text-xs text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                      aria-label={`Remove ${label} period ${idx + 1}`}
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => addPeriod(key)}
+                className="text-xs font-medium text-slate-500 hover:text-slate-900"
+              >
+                + Add another period
+              </button>
+            </>
+          )}
         </div>
-      );
-    })}
-  </div>
+
+        <label className="flex shrink-0 items-center gap-1.5 pt-1 text-xs text-slate-600">
+          <input
+            type="checkbox"
+            checked={day.closed}
+            onChange={(e) => updateDay(key, { closed: e.target.checked })}
+            className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-400"
+          />
+          Closed
+        </label>
+      </div>
+    );
+  })}
+</div>
   <p className="mt-1 text-xs text-slate-400">
     Leave a day blank if unknown. For overnight hours (e.g. 18:00–02:00), set the closing time after midnight.
   </p>
