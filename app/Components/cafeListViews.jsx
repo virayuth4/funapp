@@ -2,6 +2,7 @@
 
 import { useRef, useState, useMemo, useEffect, useSyncExternalStore } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
 import { convertPriceRange } from "@/lib/priceRange";
 import { formatLocation } from "@/lib/formatLocation";
@@ -52,12 +53,12 @@ function ClockIcon(props) {
 
 /* ---------- Rating ---------- */
 
-function BubbleRating({ rating = 0, count = 0 }) {
+function BubbleRating({ rating = 0, count = 0, textClass = "text-white" }) {
   if (!rating) return null;
 
   return (
     <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-      <span className="text-sm font-medium text-white">
+      <span className={`text-sm font-medium ${textClass}`}>
         {rating.toFixed(1)}
       </span>
 
@@ -195,7 +196,7 @@ function ImageCollage({ images, name, rank }) {
 
 /* ---------- One establishment row ---------- */
 
-function CafeRow({ rank, cafe, accent, onClick }) {
+function CafeRow({ rank, cafe, accent, theme, onClick }) {
   const images = cafe.image_paths?.length
     ? cafe.image_paths
     : [cafe.logo_url];
@@ -206,10 +207,16 @@ function CafeRow({ rank, cafe, accent, onClick }) {
   const jpy = convertPriceRange(cafe.price_range, "JPY");
   const cny = convertPriceRange(cafe.price_range, "CNY");
 
+  // Text colors: "dark" (default) is the original white-on-dark look,
+  // "light" is for white backgrounds.
+  const isLight = theme === "light";
+  const titleColor = isLight ? "text-gray-900" : "text-white";
+  const bodyColor = isLight ? "text-gray-600" : "text-white";
+
   const header = (
     <>
       <div className="flex items-start justify-between gap-2 px-4 sm:px-0">
-        <h2 className="text-base font-bold leading-snug text-white sm:text-lg">
+        <h2 className={`text-base font-bold leading-snug ${titleColor} sm:text-lg`}>
           {rank ? `${rank}. ` : ""}
           {cafe.name}
         </h2>
@@ -231,9 +238,10 @@ function CafeRow({ rank, cafe, accent, onClick }) {
         <BubbleRating
           rating={cafe.rating}
           count={cafe.review_count}
+          textClass={titleColor}
         />
       </div>
-<div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 px-4 text-xs text-white sm:px-0 sm:text-sm">
+<div className={`mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 px-4 text-xs ${bodyColor} sm:px-0 sm:text-sm`}>
   {cafe.branch_location && (
     <span className="truncate">
       {formatLocation(cafe.branch_location)}
@@ -251,14 +259,14 @@ function CafeRow({ rank, cafe, accent, onClick }) {
       hours={cafe.opening_hours}
       note={cafe.hours_note}
       showFootnote={true}
-      className="text-white"
+      className={bodyColor}
     />
   </div>
 )}
 
 {/* Price */}
  {cafe.price_range && (
-    <p className="text-xs text-white pt-1.5 px-4 md:px-0">
+    <p className={`text-xs ${bodyColor} pt-1.5 px-4 md:px-0`}>
       <PriceRangeDisplay priceRange={cafe.price_range} />
     </p>
   )}
@@ -308,7 +316,7 @@ function CafeRow({ rank, cafe, accent, onClick }) {
               </p>
             ))
           ) : cafe.description ? (
-            <p className="line-clamp-2 text-xs text-white sm:text-sm">
+            <p className={`line-clamp-2 text-xs ${bodyColor} sm:text-sm`}>
               
               {cafe.description}
             </p>
@@ -330,11 +338,23 @@ export default function CafeListView({
   accentMap = {},
   defaultAccent,
   onSelect,
+  theme = "dark", // "dark" (original) | "light" for white backgrounds
+  isHome = true, // true: call onSelect (opens modal). false: go to the slug page
 }) {
+  const router = useRouter();
+
   const [isSubmitModalOpen, setIsSubmitModalOpen] =
     useState(false);
 
     const shuffledCafes = useMemo(() => shuffleArray(cafes), [cafes]);
+
+  const handleSelect = (cafe) => {
+    if (isHome) {
+      onSelect && onSelect(cafe);
+    } else {
+      router.push(`/establishment/${cafe.slug}`);
+    }
+  };
 
   return (
     <>
@@ -377,9 +397,8 @@ export default function CafeListView({
                   rank={idx + 1}
                   cafe={cafe}
                   accent={accent}
-                  onClick={() =>
-                    onSelect && onSelect(cafe)
-                  }
+                  theme={theme}
+                  onClick={() => handleSelect(cafe)}
                 />
               );
             })}

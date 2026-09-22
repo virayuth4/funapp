@@ -59,6 +59,8 @@ function AddEstablishmentForm() {
   const [priceRange, setPriceRange] = useState("");
   const [tags, setTags] = useState("");
   const [establishYear, setEstablishYear] = useState("")
+  const [phone, setPhone] = useState("");
+  const [telegram, setTelegram] = useState("");
 
   const [logo, setLogo] = useState(null); // { file, previewUrl }
   const [existingLogoUrl, setExistingLogoUrl] = useState("");
@@ -160,6 +162,8 @@ useEffect(() => {
           : (establishment.cuisines || "");
         setCuisine(loadedCuisines);
         setPriceRange(establishment.price_range || "");
+        setPhone(establishment.phone || "");
+        setTelegram(establishment.telegram || "");
 
         const loadedImages = Array.isArray(establishment.image_paths)
           ? establishment.image_paths.map((url) => ({ id: nextId(), type: "existing", url }))
@@ -513,6 +517,8 @@ function handleVideosInputChange(e) {
     setTags("");
     setVideos([]);
     setVideosError("");
+    setPhone("");
+  setTelegram("");
   }
 
   async function handleSubmit(e) {
@@ -545,6 +551,8 @@ function handleVideosInputChange(e) {
     formData.append("is_sponsored", isSponsored);
     formData.append("in_roll", inRoll);
     if (logo?.file) formData.append("logo", logo.file);
+    if (phone.trim()) formData.append("phone", phone.trim());
+    if (telegram.trim()) formData.append("telegram", telegram.trim());
 
     const hasHours = DAYS.some(
   ({ key }) =>
@@ -938,6 +946,36 @@ if (cuisineArray.length) formData.append("cuisine", JSON.stringify(cuisineArray)
               />
             </div>
           </div>
+
+          {/* Phone / Telegram */}
+<div className="grid grid-cols-2 gap-4">
+  <div>
+    <label htmlFor="phone" className="block text-sm font-medium text-slate-700">
+      Phone number <span className="text-slate-400 font-normal">(optional)</span>
+    </label>
+    <input
+      id="phone"
+      type="tel"
+      value={phone}
+      onChange={(e) => setPhone(e.target.value)}
+      placeholder="e.g. +855 12 345 678"
+      className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
+    />
+  </div>
+  <div>
+    <label htmlFor="telegram" className="block text-sm font-medium text-slate-700">
+      Telegram <span className="text-slate-400 font-normal">(optional)</span>
+    </label>
+    <input
+      id="telegram"
+      type="url"
+      value={telegram}
+      onChange={(e) => setTelegram(e.target.value)}
+      placeholder="https://t.me/username"
+      className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
+    />
+  </div>
+</div>
 
           {/* Logo */}
           <div>

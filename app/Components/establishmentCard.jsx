@@ -100,11 +100,11 @@ function SponsoredBadge({ className = '' }) {
 
 function ImageCarousel({ images, name, rank, saved, onToggleSave, isSponsored }) {
   const scrollRef = useRef(null);
-  const shown = images.slice(0, 10);
+  const shown = images.slice(0, 3);
   const hasOverflow = images.length > 3;
 
   return (
-    <div className="relative -mx-4 w-[calc(100%+2rem)] sm:hidden">
+    <div className="relative -mx-4 w-[calc(100%+2rem)] sm:hidden ">
       <div
         ref={scrollRef}
         className="flex w-full snap-x snap-mandatory gap-0.5 overflow-x-auto scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"

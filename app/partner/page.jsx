@@ -5,6 +5,18 @@ import Link from "next/link";
 
 const STORAGE_KEY = "partner_application";
 
+const VENUE_TYPES = ["Cafe", "Restaurant", "Bakery", "Pub & Bar"];
+
+const EMPTY_FORM = {
+  cafeName: "",
+  venueType: "",
+  branchLocation: "",
+  tier: "Free",
+  googleMapsUrl: "",
+  contactTelegram: "",
+  notes: "",
+};
+
 const TIERS = [
   {
     name: "Community Listing",
@@ -16,7 +28,7 @@ const TIERS = [
     border: "border-neutral-800",
     features: [
       "Eligible for random spin reel",
-      "Standard cafe profile card & map pin",
+      "Standard venue profile card & map pin",
       "Manual team review required",
       "No guaranteed slot placement",
     ],
@@ -46,14 +58,7 @@ const TIERS = [
 ];
 
 export default function PartnerPage() {
-  const [formData, setFormData] = useState({
-    cafeName: "",
-    branchLocation: "",
-    tier: "Free",
-    googleMapsUrl: "",
-    contactTelegram: "",
-    notes: "",
-  });
+  const [formData, setFormData] = useState(EMPTY_FORM);
 
   const [loading, setLoading] = useState(false);
   const [submittedData, setSubmittedData] = useState(null);
@@ -80,6 +85,7 @@ export default function PartnerPage() {
 
     const payload = {
       cafeName: formData.cafeName,
+      venueType: formData.venueType,
       location: formData.branchLocation,
       tier: formData.tier,
       googleMapsUrl: formData.googleMapsUrl,
@@ -120,14 +126,7 @@ export default function PartnerPage() {
   const handleClearSubmission = () => {
     localStorage.removeItem(STORAGE_KEY);
     setSubmittedData(null);
-    setFormData({
-      cafeName: "",
-      branchLocation: "",
-      tier: "Free",
-      googleMapsUrl: "",
-      contactTelegram: "",
-      notes: "",
-    });
+    setFormData(EMPTY_FORM);
   };
 
   return (
@@ -146,14 +145,25 @@ export default function PartnerPage() {
 
         <header className="text-center max-w-2xl mx-auto mb-14">
           <span className="text-[10px] font-mono font-bold tracking-widest uppercase text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded">
-            For Cafe Owners
+            For Venue Owners
           </span>
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white uppercase mt-4">
-            Feature Your Cafe
+            Feature Your Venue
           </h1>
           <p className="mt-3 text-xs sm:text-sm text-neutral-400 leading-relaxed">
-            Put your venue in front of indecisive locals looking for their next coffee stop. Join our free review pool or lock in dedicated visibility.
+            Put your venue in front of indecisive locals looking for their next meal, coffee, or drink. Join our free review pool or lock in dedicated visibility.
           </p>
+
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+            {VENUE_TYPES.map((type) => (
+              <span
+                key={type}
+                className="text-[11px] font-mono text-neutral-300 bg-neutral-900 border border-neutral-800 px-2.5 py-1 rounded-full"
+              >
+                {type}
+              </span>
+            ))}
+          </div>
         </header>
 
         {/* 2-Tier Pricing Cards */}
@@ -240,6 +250,12 @@ export default function PartnerPage() {
 
               {/* Submitted Details Review Card */}
               <div className="bg-neutral-900/60 rounded-lg p-3.5 border border-neutral-800/80 space-y-2.5 text-xs font-mono">
+                {submittedData.venueType && (
+                  <div className="flex justify-between items-center text-neutral-400">
+                    <span>Type</span>
+                    <span className="text-neutral-200">{submittedData.venueType}</span>
+                  </div>
+                )}
                 <div className="flex justify-between items-center text-neutral-400">
                   <span>Tier</span>
                   <span className="text-neutral-200 font-semibold">{submittedData.tier}</span>
@@ -303,7 +319,7 @@ export default function PartnerPage() {
 
                 <div>
                   <label className="block text-[11px] font-mono uppercase text-neutral-400 mb-1">
-                    Cafe Name <span className="text-amber-500">*</span>
+                    Venue Name <span className="text-amber-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -315,6 +331,31 @@ export default function PartnerPage() {
                     className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-amber-500 disabled:opacity-50"
                   />
                 </div>
+
+                <fieldset>
+                  <legend className="block text-[11px] font-mono uppercase text-neutral-400 mb-1.5">
+                    Venue Type <span className="text-amber-500">*</span>
+                  </legend>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {VENUE_TYPES.map((type) => (
+                      <label key={type} className="cursor-pointer">
+                        <input
+                          type="radio"
+                          name="venueType"
+                          value={type}
+                          required
+                          disabled={loading}
+                          checked={formData.venueType === type}
+                          onChange={(e) => setFormData({ ...formData, venueType: e.target.value })}
+                          className="peer sr-only"
+                        />
+                        <span className="block w-full text-center bg-neutral-900 border border-neutral-800 rounded px-2 py-2 text-xs text-neutral-300 transition-colors hover:border-neutral-700 peer-checked:border-amber-500 peer-checked:bg-amber-500/10 peer-checked:text-amber-400 peer-focus-visible:ring-1 peer-focus-visible:ring-amber-500 peer-disabled:opacity-50">
+                          {type}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
@@ -387,7 +428,7 @@ export default function PartnerPage() {
                     disabled={loading}
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    placeholder="Roasting style, Wi-Fi speed, parking notes..."
+                    placeholder="Cuisine, signature items, opening hours, Wi-Fi, parking..."
                     className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-amber-500 resize-none disabled:opacity-50"
                   />
                 </div>

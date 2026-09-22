@@ -25,10 +25,10 @@ export default function HowWePickPage() {
       
 
         <Link
-          href="/"
+          href="/explore"
           className="mt-8 inline-block rounded-full border border-neutral-300 px-5 py-2 text-sm text-neutral-800 transition-colors hover:bg-neutral-900 hover:text-white"
         >
-          Return home
+          Explore
         </Link>
       </div>
     </main>
