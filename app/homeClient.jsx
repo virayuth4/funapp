@@ -278,24 +278,23 @@ useEffect(() => {
     }));
   }, [availableCafes]);
 
-  const pickSponsorsFor = useCallback(
-    (cafe) => {
-      const sponsors = cafes.filter((c) => c.is_sponsored === true && c.id !== cafe.id);
-      if (sponsors.length === 0) return [];
+const pickSponsorsFor = useCallback(
+  (cafe) => {
+    const sponsors = cafes.filter((c) => c.is_sponsored === true && c.id !== cafe.id);
+    if (sponsors.length === 0) return [];
 
-      const matched = sponsors.filter((s) => s.branch_location === cafe.branch_location);
-      const pool = matched.length > 0 ? matched : sponsors;
+    const matched = sponsors.filter((s) => s.category === cafe.category);
+    const pool = matched.length > 0 ? matched : sponsors;
 
-      const shuffled = [...pool];
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-      }
-      return shuffled.slice(0, 1);
-    },
-    [cafes]
-  );
-
+    const shuffled = [...pool];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled.slice(0, 1);
+  },
+  [cafes]
+);
   useEffect(() => {
     if (!isSpinning) {
       setTransitionStyle("none");
