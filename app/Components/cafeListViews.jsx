@@ -351,7 +351,7 @@ export default function CafeListView({
     if (isHome) {
       onSelect && onSelect(cafe);
     } else {
-      router.push(`/establishment/${cafe.slug}`);
+      router.push(`/${cafe.slug}`);
     }
   };
 

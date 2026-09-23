@@ -1,34 +1,35 @@
 // app/sitemap.js
+import { getAllEstablishmentSlugs } from '@/lib/getAllEstablishmentsBySlug';
 import { CAFE_LOCATIONS } from '@/lib/seo/cafeLocations';
-// import { getAllCafes } from '@/lib/api'; // uncomment when /cafe/[slug] exists
 
 export default async function sitemap() {
   const baseUrl = 'https://eatdoko.com';
 
+  // 1. Fetch dynamic establishment pages (app/[slug])
+  const establishments = await getAllEstablishmentSlugs();
+  const establishmentPages = establishments.map((item) => ({
+    url: `${baseUrl}/${item.slug}`,
+    lastModified: item.updated_at ? new Date(item.updated_at) : new Date(),
+    changeFrequency: 'weekly',
+    priority: 0.8,
+  }));
+
+  // 2. City / location pages
   const locationPages = Object.keys(CAFE_LOCATIONS).map((slug) => ({
     url: `${baseUrl}/best-cafes/${slug}`,
     lastModified: new Date(),
     changeFrequency: 'weekly',
-    priority: slug === 'phnom-penh' ? 1.0 : 0.8,
+    priority: slug === 'phnom-penh' ? 1.0 : 0.85,
   }));
-
-  // Once /cafe/[slug] is live, fetch every cafe and map it in:
-  // const cafes = await getAllCafes();
-  // const cafePages = cafes.map((cafe) => ({
-  //   url: `${baseUrl}/cafe/${cafe.slug}`,
-  //   lastModified: cafe.updated_at ? new Date(cafe.updated_at) : new Date(),
-  //   changeFrequency: 'monthly',
-  //   priority: 0.6,
-  // }));
 
   return [
     {
       url: baseUrl,
       lastModified: new Date(),
-      changeFrequency: 'monthly',
+      changeFrequency: 'daily',
       priority: 1.0,
     },
     ...locationPages,
-    // ...cafePages,
+    ...establishmentPages,
   ];
 }

@@ -1,4 +1,4 @@
-// app/establishment/[slug]/page.js
+// app/[slug]/page.js
 import { notFound } from 'next/navigation';
 import { Fraunces, Manrope } from 'next/font/google';
 import { getEstablishmentBySlug } from '@/lib/getEstablishmentBySlug';
@@ -8,6 +8,7 @@ import OpeningHoursList from '@/app/Components/openingHoursList';
 import { getThemeColors } from '@/lib/theme';
 import TrackedContactLink from '@/app/Components/trackContactLink';
 import GalleryCarousel from '../Components/galleryCarousel';
+import BookingModal from '../Components/bookingModal';
 
 export const revalidate = 3600; // ISR, matches backend cache TTL
 
@@ -43,8 +44,9 @@ function toTelegramHref(telegram) {
   if (telegram.startsWith('http')) return telegram;
   return `https://t.me/${telegram.replace('@', '')}`;
 }
+
 export async function generateMetadata({ params }) {
-  const { venues: slug } = await params;
+  const { slug } = await params;
   const place = await getEstablishmentBySlug(slug);
   if (!place) return {};
 
@@ -54,7 +56,7 @@ export async function generateMetadata({ params }) {
     `${place.name} in ${place.branch_location}, Phnom Penh — hours, menu, location and reviews.`;
 
   return {
-    title: `${place.name}`,
+    title: `${place.name} | EatDoko`,
     description,
     alternates: { canonical: url },
     openGraph: {
@@ -72,15 +74,14 @@ export async function generateMetadata({ params }) {
   };
 }
 
-
 export default async function VenuePage({ params }) {
-  const { venues: slug } = await params;
+  const { slug } = await params;
   console.log("slug", slug)
   const place = await getEstablishmentBySlug(slug);
   if (!place) notFound();
   const { titleColor, bodyColor } = getThemeColors("dark");
 
-  const jsonLd = {
+const jsonLd = {
     '@context': 'https://schema.org',
     '@type': toSchemaType(place.category),
     name: place.name,
@@ -115,6 +116,12 @@ export default async function VenuePage({ params }) {
     name: place.name,
     branch_location: place.branch_location,
   };
+
+  // Sections/branches offered when reserving a table. Falls back to the
+  // BookingModal's own demo list if the place has none configured yet.
+  const bookingSections = place.branches?.length
+    ? place.branches.map((b) => ({ id: b.id ?? b.slug, name: b.name, description: b.description }))
+    : undefined;
 
   return (
     <main
@@ -159,49 +166,52 @@ export default async function VenuePage({ params }) {
                 <PriceRangeDisplay priceRange={place.price_range} />
           </div>
 
-          {hasBookingChannel && (
-            <div className="mt-8 flex flex-wrap gap-3">
-              {telHref && (
-                <TrackedContactLink
-                  action="call"
-                  entity={trackedEntity}
-                  source="establishment_hero"
-                  href={telHref}
-                  className="inline-flex items-center gap-2 rounded-full bg-[#D98E1D] px-5 py-3 text-sm font-semibold text-[#16130F] transition-colors hover:bg-[#E8A33D]"
-                >
-                  <PhoneIcon className="h-4 w-4" />
-                  {place.phone}
-                </TrackedContactLink>
-              )}
-              {telegramHref && (
-                <TrackedContactLink
-                  action="telegram"
-                  entity={trackedEntity}
-                  source="establishment_hero"
-                  href={telegramHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-5 py-3 text-sm font-semibold text-white backdrop-blur transition-colors hover:bg-white/20"
-                >
-                  <TelegramIcon className="h-4 w-4" />
-                  Message on Telegram
-                </TrackedContactLink>
-              )}
-              {place.map && (
-                <TrackedContactLink
-                  action="map"
-                  entity={trackedEntity}
-                  source="establishment_hero"
-                  href={place.map}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full border border-white/25 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
-                >
-                  Get directions
-                </TrackedContactLink>
-              )}
-            </div>
-          )}
+          <div className="mt-8 flex flex-wrap gap-3">
+            {/* <BookingModal
+              placeName={place.name}
+              sections={bookingSections}
+              triggerLabel="Reserve a table"
+            /> */}
+            {telHref && (
+              <TrackedContactLink
+                action="call"
+                entity={trackedEntity}
+                source="establishment_hero"
+                href={telHref}
+                className="inline-flex items-center gap-2 rounded-full bg-[#D98E1D] px-5 py-3 text-sm font-semibold text-[#16130F] transition-colors hover:bg-[#E8A33D]"
+              >
+                <PhoneIcon className="h-4 w-4" />
+                {place.phone}
+              </TrackedContactLink>
+            )}
+            {telegramHref && (
+              <TrackedContactLink
+                action="telegram"
+                entity={trackedEntity}
+                source="establishment_hero"
+                href={telegramHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-5 py-3 text-sm font-semibold text-white backdrop-blur transition-colors hover:bg-white/20"
+              >
+                <TelegramIcon className="h-4 w-4" />
+                Message on Telegram
+              </TrackedContactLink>
+            )}
+            {place.map && (
+              <TrackedContactLink
+                action="map"
+                entity={trackedEntity}
+                source="establishment_hero"
+                href={place.map}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-full border border-white/25 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+              >
+                Get directions
+              </TrackedContactLink>
+            )}
+          </div>
         </div>
       </header>
 
@@ -278,108 +288,118 @@ export default async function VenuePage({ params }) {
 </div>
 
           {/* Booking card — sticky on desktop, hidden on mobile (mobile uses the bottom bar) */}
-          {hasBookingChannel && (
-            <aside className="hidden lg:block">
-              <div className="sticky top-24 rounded-2xl border border-[#E7E1D6] bg-white p-6">
-                <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-[#16130F]">
-                  Reserve a table
-                </h2>
-                <p className="mt-1 text-sm text-[#8B8377]">
-                  Call or message us directly — we'll confirm your table.
-                </p>
-                <div className="mt-5 flex flex-col gap-2.5">
-                  {telHref && (
-                    <TrackedContactLink
-                      action="call"
-                      entity={trackedEntity}
-                      source="establishment_sidebar"
-                      href={telHref}
-                      className="inline-flex items-center justify-center gap-2 rounded-full bg-[#D98E1D] px-4 py-3 text-sm font-semibold text-[#16130F] transition-colors hover:bg-[#E8A33D]"
-                    >
-                      <PhoneIcon className="h-4 w-4" />
-                      {place.phone}
-                    </TrackedContactLink>
-                  )}
-                  {telegramHref && (
-                    <TrackedContactLink
-                      action="telegram"
-                      entity={trackedEntity}
-                      source="establishment_sidebar"
-                      href={telegramHref}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center gap-2 rounded-full border border-[#16130F] px-4 py-3 text-sm font-semibold text-[#16130F] transition-colors hover:bg-[#16130F] hover:text-white"
-                    >
-                      <TelegramIcon className="h-4 w-4" />
-                      Message on Telegram
-                    </TrackedContactLink>
-                  )}
-                  {place.map && (
-                    <TrackedContactLink
-                      action="map"
-                      entity={trackedEntity}
-                      source="establishment_sidebar"
-                      href={place.map}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-medium text-[#3A342C] underline decoration-[#D98E1D] decoration-2 underline-offset-4"
-                    >
-                      Get directions
-                    </TrackedContactLink>
-                  )}
-                </div>
+          <aside className="hidden lg:block">
+            <div className="sticky top-24 rounded-2xl border border-[#E7E1D6] bg-white p-6">
+              <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-[#16130F]">
+                Reserve a table
+              </h2>
+              <p className="mt-1 text-sm text-[#8B8377]">
+                Pick a time online, or call or message us directly.
+              </p>
+              <div className="mt-5 flex flex-col gap-2.5">
+                {/* <BookingModal
+                  placeName={place.name}
+                  sections={bookingSections}
+                  triggerLabel="Reserve a table"
+                  triggerClassName="inline-flex items-center justify-center gap-2 rounded-full bg-[#D98E1D] px-4 py-3 text-sm font-semibold text-[#16130F] transition-colors hover:bg-[#E8A33D]"
+                /> */}
+                {telHref && (
+                  <TrackedContactLink
+                    action="call"
+                    entity={trackedEntity}
+                    source="establishment_sidebar"
+                    href={telHref}
+                    className="inline-flex items-center justify-center gap-2 rounded-full bg-[#D98E1D] px-4 py-3 text-sm font-semibold text-[#16130F] transition-colors hover:bg-[#E8A33D]"
+                  >
+                    <PhoneIcon className="h-4 w-4" />
+                    {place.phone}
+                  </TrackedContactLink>
+                )}
+                {telegramHref && (
+                  <TrackedContactLink
+                    action="telegram"
+                    entity={trackedEntity}
+                    source="establishment_sidebar"
+                    href={telegramHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-[#16130F] px-4 py-3 text-sm font-semibold text-[#16130F] transition-colors hover:bg-[#16130F] hover:text-white"
+                  >
+                    <TelegramIcon className="h-4 w-4" />
+                    Message on Telegram
+                  </TrackedContactLink>
+                )}
+                {place.map && (
+                  <TrackedContactLink
+                    action="map"
+                    entity={trackedEntity}
+                    source="establishment_sidebar"
+                    href={place.map}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-medium text-[#3A342C] underline decoration-[#D98E1D] decoration-2 underline-offset-4"
+                  >
+                    Get directions
+                  </TrackedContactLink>
+                )}
               </div>
-            </aside>
-          )}
+            </div>
+          </aside>
         </div>
       </div>
 
      {/* Mobile sticky booking bar */}
-{hasBookingChannel && (
-  <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[#E7E1D6] bg-white/95 backdrop-blur md:hidden">
-    <div className="mx-auto flex max-w-3xl items-stretch divide-x divide-[#E7E1D6]">
-      {telHref && (
-        <TrackedContactLink
-          action="call"
-          entity={trackedEntity}
-          source="establishment_mobile_bar"
-          href={telHref}
-          className="flex flex-1 items-center justify-center gap-2 bg-[#D98E1D] py-4 text-sm font-semibold text-[#16130F]"
-        >
-          <PhoneIcon className="h-4 w-4" />
-          Call
-        </TrackedContactLink>
-      )}
-      {telegramHref && (
-        <TrackedContactLink
-          action="telegram"
-          entity={trackedEntity}
-          source="establishment_mobile_bar"
-          href={telegramHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex flex-1 items-center justify-center gap-2 py-4 text-sm font-semibold text-[#16130F]"
-        >
-          <TelegramIcon className="h-4 w-4" />
-          Telegram
-        </TrackedContactLink>
-      )}
-      {place.map && (
-        <TrackedContactLink
-          action="map"
-          entity={trackedEntity}
-          source="establishment_mobile_bar"
-          href={place.map}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex flex-1 items-center justify-center gap-2 py-4 text-sm font-semibold text-[#3A342C]"
-        >
-          Map
-        </TrackedContactLink>
-      )}
-    </div>
+<div className="fixed inset-x-0 bottom-0 z-50 border-t border-[#E7E1D6] bg-white/95 backdrop-blur md:hidden">
+  <div className="mx-auto flex max-w-3xl items-stretch divide-x divide-[#E7E1D6]">
+    {/* <div className="flex flex-1">
+      <BookingModal
+        placeName={place.name}
+        sections={bookingSections}
+        triggerLabel="Reserve"
+        triggerClassName="flex w-full flex-1 items-center justify-center gap-2 bg-[#D98E1D] py-4 text-sm font-semibold text-[#16130F]"
+      />
+    </div> */}
+    {telHref && (
+      <TrackedContactLink
+        action="call"
+        entity={trackedEntity}
+        source="establishment_mobile_bar"
+        href={telHref}
+        className="flex flex-1 items-center bg-[#D98E1D] justify-center gap-2 py-4 text-sm font-semibold text-[#16130F]"
+      >
+        <PhoneIcon className="h-4 w-4" />
+        Call
+      </TrackedContactLink>
+    )}
+    {telegramHref && (
+      <TrackedContactLink
+        action="telegram"
+        entity={trackedEntity}
+        source="establishment_mobile_bar"
+        href={telegramHref}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex flex-1 items-center justify-center gap-2 py-4 text-sm font-semibold text-[#16130F]"
+      >
+        <TelegramIcon className="h-4 w-4" />
+        Telegram
+      </TrackedContactLink>
+    )}
+    {place.map && (
+      <TrackedContactLink
+        action="map"
+        entity={trackedEntity}
+        source="establishment_mobile_bar"
+        href={place.map}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex flex-1 items-center justify-center gap-2 py-4 text-sm font-semibold text-[#3A342C]"
+      >
+        Map
+      </TrackedContactLink>
+    )}
   </div>
-)}
+</div>
     </main>
   );
 }
