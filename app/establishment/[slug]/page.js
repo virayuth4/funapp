@@ -7,6 +7,7 @@ import Link from 'next/link';
 import PriceRangeDisplay from '@/app/Components/priceRangeDisplay';
 import OpeningHoursList from '@/app/Components/openingHoursList';
 import { getThemeColors } from '@/lib/theme';
+import TrackedContactLink from '@/app/Components/trackContactLink';
 
 export const revalidate = 3600; // ISR, matches backend cache TTL
 
@@ -108,6 +109,13 @@ export default async function EstablishmentPage({ params }) {
   const telegramHref = toTelegramHref(place.telegram);
   const hasBookingChannel = Boolean(telHref || telegramHref);
 
+  // Minimal shape trackEventClick needs, reused across every tracked link below.
+  const trackedEntity = {
+    id: place.id,
+    name: place.name,
+    branch_location: place.branch_location,
+  };
+
   return (
     <main
       className={`${display.variable} ${body.variable} relative min-h-screen w-full bg-[#ffffff] font-[family-name:var(--font-body)] pb-24 md:pb-0`}
@@ -137,12 +145,6 @@ export default async function EstablishmentPage({ params }) {
             {place.name}
           </h1>
 
-          {/* <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/70">
-            {place.est_year && <span>Est. {place.est_year}</span>}
-            {place.est_year && place.price_range && <span aria-hidden="true">·</span>}
-            {place.price_range && <span>{'$'.repeat(Number(place.price_range))} price range</span>}
-          </div> */}
-
            <div className="mt-4">
                <OpeningHoursList
                    hours={place.opening_hours}
@@ -157,21 +159,25 @@ export default async function EstablishmentPage({ params }) {
                 <PriceRangeDisplay priceRange={place.price_range} />
           </div>
 
-          
-
           {hasBookingChannel && (
             <div className="mt-8 flex flex-wrap gap-3">
               {telHref && (
-                <a
+                <TrackedContactLink
+                  action="call"
+                  entity={trackedEntity}
+                  source="establishment_hero"
                   href={telHref}
                   className="inline-flex items-center gap-2 rounded-full bg-[#D98E1D] px-5 py-3 text-sm font-semibold text-[#16130F] transition-colors hover:bg-[#E8A33D]"
                 >
                   <PhoneIcon className="h-4 w-4" />
                   {place.phone}
-                </a>
+                </TrackedContactLink>
               )}
               {telegramHref && (
-                <a
+                <TrackedContactLink
+                  action="telegram"
+                  entity={trackedEntity}
+                  source="establishment_hero"
                   href={telegramHref}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -179,17 +185,20 @@ export default async function EstablishmentPage({ params }) {
                 >
                   <TelegramIcon className="h-4 w-4" />
                   Message on Telegram
-                </a>
+                </TrackedContactLink>
               )}
               {place.map && (
-                <a
+                <TrackedContactLink
+                  action="map"
+                  entity={trackedEntity}
+                  source="establishment_hero"
                   href={place.map}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 rounded-full border border-white/25 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
                 >
                   Get directions
-                </a>
+                </TrackedContactLink>
               )}
             </div>
           )}
@@ -205,8 +214,6 @@ export default async function EstablishmentPage({ params }) {
                 {place.description}
               </p>
             )}
-
-           
 
             {(place.cuisines?.length > 0 || place.tags?.length > 0) && (
               <div className="mt-6 flex flex-wrap gap-2">
@@ -282,16 +289,22 @@ export default async function EstablishmentPage({ params }) {
                 </p>
                 <div className="mt-5 flex flex-col gap-2.5">
                   {telHref && (
-                    <a
+                    <TrackedContactLink
+                      action="call"
+                      entity={trackedEntity}
+                      source="establishment_sidebar"
                       href={telHref}
                       className="inline-flex items-center justify-center gap-2 rounded-full bg-[#D98E1D] px-4 py-3 text-sm font-semibold text-[#16130F] transition-colors hover:bg-[#E8A33D]"
                     >
                       <PhoneIcon className="h-4 w-4" />
                       {place.phone}
-                    </a>
+                    </TrackedContactLink>
                   )}
                   {telegramHref && (
-                    <a
+                    <TrackedContactLink
+                      action="telegram"
+                      entity={trackedEntity}
+                      source="establishment_sidebar"
                       href={telegramHref}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -299,17 +312,20 @@ export default async function EstablishmentPage({ params }) {
                     >
                       <TelegramIcon className="h-4 w-4" />
                       Message on Telegram
-                    </a>
+                    </TrackedContactLink>
                   )}
                   {place.map && (
-                    <a
+                    <TrackedContactLink
+                      action="map"
+                      entity={trackedEntity}
+                      source="establishment_sidebar"
                       href={place.map}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-medium text-[#3A342C] underline decoration-[#D98E1D] decoration-2 underline-offset-4"
                     >
                       Get directions
-                    </a>
+                    </TrackedContactLink>
                   )}
                 </div>
               </div>
@@ -323,16 +339,22 @@ export default async function EstablishmentPage({ params }) {
         <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[#E7E1D6] bg-white/95 backdrop-blur md:hidden">
           <div className="mx-auto flex max-w-3xl items-stretch">
             {telHref && (
-              <a
+              <TrackedContactLink
+                action="call"
+                entity={trackedEntity}
+                source="establishment_mobile_bar"
                 href={telHref}
                 className="flex flex-1 items-center justify-center gap-2 bg-[#D98E1D] py-4 text-sm font-semibold text-[#16130F]"
               >
                 <PhoneIcon className="h-4 w-4" />
                 Call
-              </a>
+              </TrackedContactLink>
             )}
             {telegramHref && (
-              <a
+              <TrackedContactLink
+                action="telegram"
+                entity={trackedEntity}
+                source="establishment_mobile_bar"
                 href={telegramHref}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -340,17 +362,20 @@ export default async function EstablishmentPage({ params }) {
               >
                 <TelegramIcon className="h-4 w-4" />
                 Telegram
-              </a>
+              </TrackedContactLink>
             )}
             {place.map && (
-              <a
+              <TrackedContactLink
+                action="map"
+                entity={trackedEntity}
+                source="establishment_mobile_bar"
                 href={place.map}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex flex-1 items-center justify-center gap-2 py-4 text-sm font-semibold text-[#3A342C]"
               >
                 Map
-              </a>
+              </TrackedContactLink>
             )}
           </div>
         </div>

@@ -208,6 +208,16 @@ useEffect(() => {
     setSessionId(sid);
     setSessionExpiresAt(Date.now() + SESSION_TIMEOUT);
   }
+
+  const branchParam = url.searchParams.get("branch");
+  if (branchParam && branches.includes(branchParam)) {
+    setSelectedBranch(branchParam);
+  }
+
+  const typeParam = url.searchParams.get("type");
+  if (typeParam) {
+    setSelectedType(typeParam);
+  }
 }, []); // run once on mount
 
   const typeTabs = useMemo(() => {
@@ -225,6 +235,14 @@ useEffect(() => {
     });
     return ["ALL", ...Array.from(known)];
   }, [availableCategories]);
+
+  useEffect(() => {
+  const url = new URL(window.location.href);
+  const typeParam = url.searchParams.get("type");
+  if (typeParam && !typeTabs.includes(typeParam)) {
+    setSelectedType("cafe");
+  }
+}, [typeTabs]);
 
   const openCafeModal = (cafe, fromList = false) => {
     setActiveModalItem(cafe);
@@ -304,7 +322,24 @@ const pickSponsorsFor = useCallback(
     }
   }, [createReel, isSpinning]);
 
+// Keep ?branch= and ?type= in sync with selections, preserving other params
+useEffect(() => {
+  const url = new URL(window.location.href);
 
+  if (selectedBranch && selectedBranch !== "ALL") {
+    url.searchParams.set("branch", selectedBranch);
+  } else {
+    url.searchParams.delete("branch");
+  }
+
+  if (selectedType && typeTabs.includes(selectedType) && selectedType !== "ALL") {
+    url.searchParams.set("type", selectedType);
+  } else {
+    url.searchParams.delete("type");
+  }
+
+  window.history.replaceState({}, "", url);
+}, [selectedBranch, selectedType, typeTabs]);
 
 
 
