@@ -874,7 +874,7 @@ const activeAccent = activeModalItem
       disabled={isSpinning || availableCafes.length === 0}
       className="relative px-10 py-3.5 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 bg-[length:200%_200%] hover:from-amber-300 hover:via-amber-400 hover:to-amber-500 active:scale-95 text-black font-extrabold rounded shadow-[0_0_25px_rgba(245,158,11,0.25)] transition-all uppercase tracking-widest text-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:animate-none cursor-pointer border border-amber-300/40 animate-gradient-x animate-pulse-glow overflow-hidden"
     >
-      <span className="relative z-10">{isSpinning ? "Selecting Cafe..." : "Spin"}</span>
+      <span className="relative z-10">{isSpinning ? "Selecting..." : "Spin"}</span>
       <span className="absolute inset-0 -translate-x-full hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-12" />
     </button>
 

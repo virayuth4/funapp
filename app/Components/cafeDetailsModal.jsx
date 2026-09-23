@@ -190,9 +190,9 @@ export default function CafeDetailModal({
               />
 
               <div className="min-w-0 flex-1">
-                <span className="text-xs font-semibold" style={{ color }}>
+                {/* <span className="text-xs font-semibold" style={{ color }}>
                   {isPartnerView ? "Partner" : "Selected cafe"}
-                </span>
+                </span> */}
 
                 <h2 className="truncate text-lg font-extrabold leading-tight text-white">
                   {entity.name}
@@ -305,6 +305,30 @@ export default function CafeDetailModal({
             )}
           </div>
 
+           {/* Exclude / Spin again — only when opened from a spin */}
+          {isSpinMode && (
+            <div className="mt-5 flex gap-2.5">
+              <button
+                onClick={onExclude}
+                className={`group flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-neutral-800 bg-neutral-900 py-2.5 text-xs font-semibold text-neutral-400 transition-all hover:border-red-900/70 hover:bg-red-950/30 hover:text-red-300 ${focusRing}`}
+              >
+                <Ban size={14} className="opacity-70 group-hover:opacity-100" />
+                <span>Exclude</span>
+              </button>
+
+              <button
+                onClick={onSpinAgain}
+                className={`group flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-amber-500 py-2.5 text-xs font-bold text-black transition-all hover:bg-amber-400 ${focusRing}`}
+              >
+                <RotateCw
+                  size={14}
+                  className="transition-transform duration-300 group-hover:rotate-180"
+                />
+                <span>Spin again</span>
+              </button>
+            </div>
+          )}
+
           {/* Nearby partners — only on the cafe view */}
           {!isPartnerView && sponsorList.length > 0 && (
             <div className="mt-1 border-neutral-900 pt-4">
@@ -362,29 +386,7 @@ export default function CafeDetailModal({
                         [   Call   |  Telegram   ]
             Other:      Google Maps + contact row (Spin row hidden) */}
         <div className="shrink-0 space-y-2.5 border-t border-neutral-900 bg-neutral-950 px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4">
-          {/* Exclude / Spin again — only when opened from a spin */}
-          {isSpinMode && (
-            <div className="flex gap-2.5">
-              <button
-                onClick={onExclude}
-                className={`group flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-neutral-800 bg-neutral-900 py-2.5 text-xs font-semibold text-neutral-400 transition-all hover:border-red-900/70 hover:bg-red-950/30 hover:text-red-300 ${focusRing}`}
-              >
-                <Ban size={14} className="opacity-70 group-hover:opacity-100" />
-                <span>Exclude</span>
-              </button>
-
-              <button
-                onClick={onSpinAgain}
-                className={`group flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-amber-500 py-2.5 text-xs font-bold text-black transition-all hover:bg-amber-400 ${focusRing}`}
-              >
-                <RotateCw
-                  size={14}
-                  className="transition-transform duration-300 group-hover:rotate-180"
-                />
-                <span>Spin again</span>
-              </button>
-            </div>
-          )}
+         
 
           {/* Main action: Google Maps */}
           <a
