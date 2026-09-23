@@ -29,9 +29,13 @@
     background-position: 100% 50%;
   }
 }
+html, body {
+  overscroll-behavior-y: none;
+}
 
 body {
   background-color: #ffffff;
   color: #171717;
   font-family: var(--font-geist-sans), sans-serif;
+  overscroll-behavior-y: none;
 }
