@@ -54,8 +54,7 @@ export default function Navigation() {
           onClick={() => setMenuOpen(false)}
         >
           <div
-             className="relative w-[85%] max-w-xs rounded-2xl bg-white/20  border border-white/30 p-8 shadow-xl"
-
+            className="relative w-[85%] max-w-xs rounded-2xl bg-white/20 border border-white/30 p-8 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -67,33 +66,33 @@ export default function Navigation() {
               <X size={20} />
             </button>
 
-            <div className="flex flex-col items-center gap-6 pt-4">
+            <div className="flex flex-col items-center gap-2 pt-4 -mx-8">
               <Link
                 href="/explore"
                 onClick={() => setMenuOpen(false)}
-                className="text-lg font-semibold tracking-wide text-white hover:text-amber-600 transition-colors"
+                className="w-full text-center px-8 py-3 text-lg font-semibold tracking-wide text-white hover:text-amber-600 transition-colors"
               >
                 Explore
               </Link>
               <Link
                 href="/partner"
                 onClick={() => setMenuOpen(false)}
-                className="text-lg font-semibold tracking-wide text-white hover:text-amber-600 transition-colors"
+                className="w-full text-center px-8 py-3 text-lg font-semibold tracking-wide text-white hover:text-amber-600 transition-colors"
               >
                 Partner
               </Link>
 
-               <Link
+              <Link
                 href="/about"
                 onClick={() => setMenuOpen(false)}
-                className="text-lg font-semibold tracking-wide text-white hover:text-amber-600 transition-colors"
+                className="w-full text-center px-8 py-3 text-lg font-semibold tracking-wide text-white hover:text-amber-600 transition-colors"
               >
-                About 
+                About
               </Link>
-               <Link
+              <Link
                 href="/contact"
                 onClick={() => setMenuOpen(false)}
-                className="text-lg font-semibold tracking-wide text-white hover:text-amber-600 transition-colors"
+                className="w-full text-center px-8 py-3 text-lg font-semibold tracking-wide text-white hover:text-amber-600 transition-colors"
               >
                 Contact
               </Link>
