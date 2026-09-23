@@ -41,11 +41,10 @@ const TIERS = [
     tierValue: "Featured",
     price: "Contact us",
     period: "for price",
-    description: "Guaranteed draw placement plus direct spotlight recommendations.",
+    description: "Guaranteed direct spotlight recommendations.",
     badge: "Popular",
     border: "border-amber-500/80",
     features: [
-      "Guaranteed slot in branch spin reels",
       "Featured 'Nearby Partner' badge under winners",
       "Priority card accent styling",
       "Review turnaround within 24 hours",
