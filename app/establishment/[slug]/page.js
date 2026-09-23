@@ -207,75 +207,75 @@ export default async function EstablishmentPage({ params }) {
 
       <div className="mx-auto w-full max-w-3xl px-5 sm:px-6">
         <div className="grid grid-cols-1 gap-10 pt-10 lg:grid-cols-[1fr_280px] lg:gap-12">
-          {/* Primary column */}
-          <div className="min-w-0">
-            {place.description && (
-              <p className="whitespace-pre-line text-[15px] leading-relaxed text-[#3A342C]">
-                {place.description}
-              </p>
-            )}
+        {/* Primary column */}
+<div className="min-w-0">
+  <section>
+    <h2 className="font-[family-name:var(--font-display)] text-xl font-semibold text-[#16130F]">
+      Gallery
+    </h2>
+    <div className="mt-4">
+      <GalleryCarousel images={galleryImages} alt={place.name} />
+    </div>
+  </section>
 
-            {(place.cuisines?.length > 0 || place.tags?.length > 0) && (
-              <div className="mt-6 flex flex-wrap gap-2">
-                {place.cuisines?.map((c) => (
-                  <span
-                    key={c}
-                    className=" bg-[#2F4B3C]/10 px-3 py-1 text-sm text-[#2F4B3C]"
-                  >
-                    {c}
-                  </span>
-                ))}
-                {place.tags?.map((t) => (
-                  <span
-                    key={t}
-                    className=" bg-[#EFE9DD] px-3 py-1 text-sm text-[#6B6355]"
-                  >
-                    {t}
-                  </span>
-                ))}
-              </div>
-            )}
+  {place.description && (
+    <p className="mt-10 whitespace-pre-line text-[15px] leading-relaxed text-[#3A342C]">
+      {place.description}
+    </p>
+  )}
 
-            {place.instagram && (
-              <div className="mt-6">
-                <Link
-                  href={place.instagram}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm font-medium text-[#3A342C] underline decoration-[#D98E1D] decoration-2 underline-offset-4"
-                >
-                  See more on Instagram
-                </Link>
-              </div>
-            )}
+  {(place.cuisines?.length > 0 || place.tags?.length > 0) && (
+    <div className="mt-6 flex flex-wrap gap-2">
+      {place.cuisines?.map((c) => (
+        <span
+          key={c}
+          className=" bg-[#2F4B3C]/10 px-3 py-1 text-sm text-[#2F4B3C]"
+        >
+          {c}
+        </span>
+      ))}
+      {place.tags?.map((t) => (
+        <span
+          key={t}
+          className=" bg-[#EFE9DD] px-3 py-1 text-sm text-[#6B6355]"
+        >
+          {t}
+        </span>
+      ))}
+    </div>
+  )}
 
-            <section className="mt-10 ">
-              <h2 className="font-[family-name:var(--font-display)] text-xl font-semibold text-[#16130F]">
-                Gallery
-              </h2>
-              <div className="mt-4">
-                <GalleryCarousel images={galleryImages} alt={place.name} />
-              </div>
-            </section>
+  {place.instagram && (
+    <div className="mt-6 pb-20">
+      <Link
+        href={place.instagram}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-sm font-medium text-[#3A342C] underline decoration-[#D98E1D] decoration-2 underline-offset-4"
+      >
+        See more on Instagram
+      </Link>
+    </div>
+  )}
 
-            {place.video_urls?.length > 0 && (
-              <section className="mt-10">
-                <h2 className="font-[family-name:var(--font-display)] text-xl font-semibold text-[#16130F]">
-                  Video
-                </h2>
-                <div className="mt-4 grid grid-cols-1 gap-4">
-                  {place.video_urls.map((src) => (
-                    <video
-                      key={src}
-                      src={src}
-                      controls
-                      className="w-full rounded-xl bg-black"
-                    />
-                  ))}
-                </div>
-              </section>
-            )}
-          </div>
+  {place.video_urls?.length > 0 && (
+    <section className="mt-10">
+      <h2 className="font-[family-name:var(--font-display)] text-xl font-semibold text-[#16130F]">
+        Video
+      </h2>
+      <div className="mt-4 grid grid-cols-1 gap-4">
+        {place.video_urls.map((src) => (
+          <video
+            key={src}
+            src={src}
+            controls
+            className="w-full rounded-xl bg-black"
+          />
+        ))}
+      </div>
+    </section>
+  )}
+</div>
 
           {/* Booking card — sticky on desktop, hidden on mobile (mobile uses the bottom bar) */}
           {hasBookingChannel && (
@@ -334,52 +334,52 @@ export default async function EstablishmentPage({ params }) {
         </div>
       </div>
 
-      {/* Mobile sticky booking bar */}
-      {hasBookingChannel && (
-        <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[#E7E1D6] bg-white/95 backdrop-blur md:hidden">
-          <div className="mx-auto flex max-w-3xl items-stretch">
-            {telHref && (
-              <TrackedContactLink
-                action="call"
-                entity={trackedEntity}
-                source="establishment_mobile_bar"
-                href={telHref}
-                className="flex flex-1 items-center justify-center gap-2 bg-[#D98E1D] py-4 text-sm font-semibold text-[#16130F]"
-              >
-                <PhoneIcon className="h-4 w-4" />
-                Call
-              </TrackedContactLink>
-            )}
-            {telegramHref && (
-              <TrackedContactLink
-                action="telegram"
-                entity={trackedEntity}
-                source="establishment_mobile_bar"
-                href={telegramHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex flex-1 items-center justify-center gap-2 py-4 text-sm font-semibold text-[#16130F]"
-              >
-                <TelegramIcon className="h-4 w-4" />
-                Telegram
-              </TrackedContactLink>
-            )}
-            {place.map && (
-              <TrackedContactLink
-                action="map"
-                entity={trackedEntity}
-                source="establishment_mobile_bar"
-                href={place.map}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex flex-1 items-center justify-center gap-2 py-4 text-sm font-semibold text-[#3A342C]"
-              >
-                Map
-              </TrackedContactLink>
-            )}
-          </div>
-        </div>
+     {/* Mobile sticky booking bar */}
+{hasBookingChannel && (
+  <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[#E7E1D6] bg-white/95 backdrop-blur md:hidden">
+    <div className="mx-auto flex max-w-3xl items-stretch divide-x divide-[#E7E1D6]">
+      {telHref && (
+        <TrackedContactLink
+          action="call"
+          entity={trackedEntity}
+          source="establishment_mobile_bar"
+          href={telHref}
+          className="flex flex-1 items-center justify-center gap-2 bg-[#D98E1D] py-4 text-sm font-semibold text-[#16130F]"
+        >
+          <PhoneIcon className="h-4 w-4" />
+          Call
+        </TrackedContactLink>
       )}
+      {telegramHref && (
+        <TrackedContactLink
+          action="telegram"
+          entity={trackedEntity}
+          source="establishment_mobile_bar"
+          href={telegramHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex flex-1 items-center justify-center gap-2 py-4 text-sm font-semibold text-[#16130F]"
+        >
+          <TelegramIcon className="h-4 w-4" />
+          Telegram
+        </TrackedContactLink>
+      )}
+      {place.map && (
+        <TrackedContactLink
+          action="map"
+          entity={trackedEntity}
+          source="establishment_mobile_bar"
+          href={place.map}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex flex-1 items-center justify-center gap-2 py-4 text-sm font-semibold text-[#3A342C]"
+        >
+          Map
+        </TrackedContactLink>
+      )}
+    </div>
+  </div>
+)}
     </main>
   );
 }
