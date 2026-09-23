@@ -208,7 +208,7 @@ export default function EstablishmentCard({ cafe, rank }) {
 
   // Detail page route — assumes /{category}/{slug}. Adjust if your actual
   // routes differ (e.g. all establishments live under /place/[slug]).
-  const detailHref = `/establishment/${cafe.slug}`;
+  const detailHref = `/${cafe.slug}`;
 
   const header = (
   <>

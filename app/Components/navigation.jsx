@@ -39,7 +39,7 @@ export default function Navigation() {
               type="button"
               onClick={() => setMenuOpen(true)}
               aria-label="Open menu"
-              className="flex items-center justify-center text-amber-500 hover:text-amber-600 transition-colors md:hidden"
+              className="flex items-center justify-center text-amber-500 hover:text-amber-600 transition-colors "
             >
               <Equal size={22} />
             </button>
@@ -50,7 +50,7 @@ export default function Navigation() {
       {/* Modal overlay */}
       {menuOpen && (
         <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm md:hidden"
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm"
           onClick={() => setMenuOpen(false)}
         >
           <div
@@ -72,14 +72,14 @@ export default function Navigation() {
                 onClick={() => setMenuOpen(false)}
                 className="w-full text-center px-8 py-3 text-lg font-semibold tracking-wide text-white hover:text-amber-600 transition-colors"
               >
-                Explore
+                Curated Places
               </Link>
               <Link
                 href="/partner"
                 onClick={() => setMenuOpen(false)}
                 className="w-full text-center px-8 py-3 text-lg font-semibold tracking-wide text-white hover:text-amber-600 transition-colors"
               >
-                Partner
+                Partnership
               </Link>
 
               <Link
