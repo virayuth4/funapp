@@ -37,7 +37,7 @@ const WINNER_INDEX = 50;
 
 export default function HomeClient({ initialCafes, initialCategories, initialError }) {
   const [selectedBranch, setSelectedBranch] = useState("ALL");
-  const [selectedType, setSelectedType] = useState("cafe");
+  const [selectedType, setSelectedType] = useState("restaurant");
   const [removedIds, setRemovedIds] = useState([]);
   const [activeModalItem, setActiveModalItem] = useState(null);
   const [isSpinning, setIsSpinning] = useState(false);
