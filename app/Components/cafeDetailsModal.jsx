@@ -19,7 +19,7 @@ import {
   Send,
   X,
 } from "lucide-react";
-import { trackMapClick } from "@/lib/trackMapClick";
+import { trackEventClick} from "@/lib/trackEventClick";
 
 const toTelHref = (phone) => `tel:${phone.replace(/[^\d+]/g, "")}`;
 const isHttpUrl = (value) => /^https?:\/\//i.test(value || "");
@@ -390,7 +390,8 @@ export default function CafeDetailModal({
             target="_blank"
             rel="noopener noreferrer"
             onClick={() =>
-              trackMapClick(entity, {
+              trackEventClick(entity, {
+                action: "map",
                 isPartner: isPartnerView,
                 source: isPartnerView ? "partner" : isList ? "list" : "spin",
               })
@@ -411,6 +412,13 @@ export default function CafeDetailModal({
               {phone && (
                 <a
                   href={toTelHref(phone)}
+                   onClick={() =>
+                      trackEventClick(entity, {
+                        action: "call",
+                        isPartner: isPartnerView,
+                        source: isPartnerView ? "partner" : isList ? "list" : "spin",
+                      })
+                    }
                   className={`flex flex-1 items-center justify-center gap-2 rounded-lg border border-neutral-800 bg-neutral-900 py-3 text-xs font-semibold text-neutral-200 transition-all hover:border-neutral-600 hover:bg-neutral-800 ${focusRing}`}
                 >
                   <Phone size={14} />
@@ -423,6 +431,13 @@ export default function CafeDetailModal({
                   href={telegram}
                   target="_blank"
                   rel="noopener noreferrer"
+                   onClick={() =>
+                    trackEventClick(entity, {   
+                      action: "telegram",
+                      isPartner: isPartnerView,
+                      source: isPartnerView ? "partner" : isList ? "list" : "spin",
+                    })
+                  }
                   className={`flex flex-1 items-center justify-center gap-2 rounded-lg border border-neutral-800 bg-neutral-900 py-3 text-xs font-semibold text-neutral-200 transition-all hover:border-sky-700/70 hover:bg-sky-950/30 hover:text-sky-300 ${focusRing}`}
                 >
                   <Send size={14} />

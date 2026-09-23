@@ -23,6 +23,7 @@ export default function OpeningHoursList({
   note,
   showFootnote = true,
   className = "",
+  textSize="text-xs"
 }) {
   const [open, setOpen] = useState(false);
   const todayKey = useTodayKey();
@@ -41,7 +42,7 @@ export default function OpeningHoursList({
           setOpen(true);
         }}
         onKeyDown={(e) => e.stopPropagation()}
-        className="flex cursor-pointer items-center gap-1.5 text-left text-xs hover:opacity-80"
+        className={`flex cursor-pointer items-center gap-1.5 text-left ${textSize} hover:opacity-80`}
         aria-haspopup="dialog"
       >
         <span>{summary}</span>
@@ -104,7 +105,7 @@ export default function OpeningHoursList({
                     </span>
 
                     <span
-                      className={`text-right tabular-nums ${
+                      className={`text-right tabular-nums  ${
                         isClosed ? "text-rose-600" : ""
                       }`}
                     >

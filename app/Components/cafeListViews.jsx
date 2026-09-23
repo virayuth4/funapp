@@ -11,6 +11,7 @@ import SpinnerImage from "./spinnerImage";
 import { formatList } from "@/lib/capitlize";
 import OpeningHoursList from "./openingHoursList";
 import PriceRangeDisplay from "./priceRangeDisplay";
+import { getThemeColors } from "@/lib/theme";
 
 /* ---------- Small icons ---------- */
 
@@ -207,13 +208,10 @@ function CafeRow({ rank, cafe, accent, theme, onClick }) {
   const jpy = convertPriceRange(cafe.price_range, "JPY");
   const cny = convertPriceRange(cafe.price_range, "CNY");
 
-  // Text colors: "dark" (default) is the original white-on-dark look,
-  // "light" is for white backgrounds.
-  const isLight = theme === "light";
-  const titleColor = isLight ? "text-gray-900" : "text-white";
-  const bodyColor = isLight ? "text-gray-600" : "text-white";
 
-  const header = (
+const { titleColor, bodyColor } = getThemeColors(theme);
+  
+const header = (
     <>
       <div className="flex items-start justify-between gap-2 px-4 sm:px-0">
         <h2 className={`text-base font-bold leading-snug ${titleColor} sm:text-lg`}>
@@ -260,6 +258,7 @@ function CafeRow({ rank, cafe, accent, theme, onClick }) {
       note={cafe.hours_note}
       showFootnote={true}
       className={bodyColor}
+      periodClassName="text-xl"
     />
   </div>
 )}
