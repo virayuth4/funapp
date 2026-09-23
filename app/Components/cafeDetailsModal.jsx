@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import Lightbox from "yet-another-react-lightbox";
+import Video from "yet-another-react-lightbox/plugins/video";
 import "yet-another-react-lightbox/styles.css";
 import {
   ArrowLeft,
@@ -65,8 +66,8 @@ export default function CafeDetailModal({
   const isSpinMode = !isPartnerView && !isList;
 
   const color = isPartnerView
-    ? "#fbbf24"
-    : accentColor || cafe.reelAccent?.color || "#fbbf24";
+    ? "#FFCA28"
+    : accentColor || cafe.reelAccent?.color || "#FFCA28";
 
   const phone =
     typeof entity.phone === "string" && entity.phone.trim() ? entity.phone.trim() : null;
@@ -226,13 +227,14 @@ export default function CafeDetailModal({
                         aria-label={`Open ${slide.type} ${idx + 1} full screen`}
                       >
                         {slide.type === "video" ? (
-                          <video
-                            src={slide.src}
-                            muted
-                            playsInline
-                            className="absolute inset-0 h-full w-full object-cover"
-                          />
-                        ) : (
+                                      <video
+                src={slide.src}
+                muted
+                playsInline
+                preload="metadata"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+                                      ) : (
                           <Image
                             src={slide.src}
                             alt={`${entity.name} photo ${idx + 1}`}
@@ -450,20 +452,21 @@ export default function CafeDetailModal({
 
         {/* Lightbox */}
         {expandedImage !== null && (
-          <Lightbox
-            open
-            close={() => setExpandedImage(null)}
-            index={expandedImage}
-            slides={gallerySlides.map((slide) =>
-              slide.type === "video"
-                ? {
-                    type: "video",
-                    width: 1280,
-                    height: 720,
-                    sources: [{ src: slide.src, type: "video/mp4" }],
-                  }
-                : { src: slide.src }
-            )}
+        <Lightbox
+              open
+              close={() => setExpandedImage(null)}
+              index={expandedImage}
+              plugins={[Video]}
+              slides={gallerySlides.map((slide) =>
+                slide.type === "video"
+                  ? {
+                      type: "video",
+                      width: 1280,
+                      height: 720,
+                      sources: [{ src: slide.src, type: "video/mp4" }],
+                    }
+                  : { src: slide.src }
+              )}
             on={{ view: ({ index }) => setExpandedImage(index) }}
             animation={{ fade: 250, swipe: 300 }}
             controller={{ closeOnBackdropClick: true }}

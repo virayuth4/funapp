@@ -692,6 +692,10 @@ const resetExcluded = async () => {
   return url.toString();
 }, [sessionId]);
 
+const activeAccent = activeModalItem
+  ? ACCENT_MAP[activeModalItem.accent] || DEFAULT_ACCENT
+  : null;
+
   return (
     <>
  
@@ -962,20 +966,20 @@ const resetExcluded = async () => {
         onSelect={(cafe) => openCafeModal(cafe, true)}
       />
 
-      <CafeDetailModal
-        key={`cafe-${activeModalItem?.id ?? "none"}`}
-        isOpen={!!activeModalItem}
-        onClose={closeCafeModal}
-        cafe={activeModalItem}
-        sponsors={suggestedSponsors}
-        accentColor={activeModalItem?.reelAccent?.color}
-        isList={modalIsList}
-        onExclude={() => activeModalItem && handleRemoveCafe(activeModalItem.id)}
-        onSpinAgain={() => {
-          setActiveModalItem(null);
-          requestSpin();
-        }}
-      />
+    <CafeDetailModal
+  key={`cafe-${activeModalItem?.id ?? "none"}`}
+  isOpen={!!activeModalItem}
+  onClose={closeCafeModal}
+  cafe={activeModalItem}
+  sponsors={suggestedSponsors}
+  accentColor={activeAccent?.color}
+  isList={modalIsList}
+  onExclude={() => activeModalItem && handleRemoveCafe(activeModalItem.id)}
+  onSpinAgain={() => {
+    setActiveModalItem(null);
+    requestSpin();
+  }}
+/>
     </main>
     </>
   );
