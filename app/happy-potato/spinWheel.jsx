@@ -34,12 +34,12 @@ const PRIZES = [
     image: "/logos/happy-potato/baby-fries.jpg",
   },
   {
-    id: "drink",
-    label: "Coca Drink",
+    id: "try-again",
+    label: "Try again",
     color: BRAND.navy,
     textColor: BRAND.yellow,
     image:
-      "/logos/happy-potato/coca-cola.png",
+      "/logos/happy-potato-logo.png",
   },
   {
     id: "chicken",
@@ -60,7 +60,7 @@ const PRIZES = [
     label: "1 Dipdip Sauce", 
     color: BRAND.red, 
     textColor: BRAND.cream ,
-    image: "/logos/happy-potato/save  .jpg",
+    image: "/logos/happy-potato/save.jpg",
   },
 ];
 

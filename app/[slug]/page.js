@@ -9,6 +9,8 @@ import { getThemeColors } from '@/lib/theme';
 import TrackedContactLink from '@/app/Components/trackContactLink';
 import GalleryCarousel from '../Components/galleryCarousel';
 import BookingModal from '../Components/bookingModal';
+import { sendBookingToTelegram } from '@/lib/telegram';
+import BookingModalClient from '../Components/bookingModalClient';
 
 export const revalidate = 3600; // ISR, matches backend cache TTL
 
@@ -123,6 +125,18 @@ const jsonLd = {
     ? place.branches.map((b) => ({ id: b.id ?? b.slug, name: b.name, description: b.description }))
     : undefined;
 
+  async function handleBookingConfirm(booking) {
+  const res = await fetch('/api/booking', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(booking),
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to submit booking');
+  }
+}
+
   return (
     <main
       className={`${display.variable} ${body.variable} relative min-h-screen w-full bg-[#ffffff] font-[family-name:var(--font-body)] pb-24 md:pb-0`}
@@ -167,11 +181,9 @@ const jsonLd = {
           </div>
 
           <div className="mt-8 flex flex-wrap gap-3">
-            {/* <BookingModal
-              placeName={place.name}
-              sections={bookingSections}
-              triggerLabel="Reserve a table"
-            /> */}
+             <BookingModalClient
+              
+            />
             {telHref && (
               <TrackedContactLink
                 action="call"
